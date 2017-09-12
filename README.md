@@ -39,21 +39,58 @@ This module defines some APIs wrapping dom style and class.
 This module implemented VisuleElement type for wrapping a visual dom node.  
 VisualElment provides a number of methods encapsulated from the basic utility module function and supports chain calls.
 
-## Guide
+## Installation
+There are multiple ways to install the skylark-uitls library. 
+- npm  
+npm install skylark-utils --save
+- bower  
+bower install skylark-utils
+- cdn  
+http://registry.skylarkjs.org/packages/skylark-utils/v0.9.0/skylark-utils.js    or  
+http://registry.skylarkjs.org/packages/skylark-utils/v0.9.0/uncompressed/skylark-utils.js 
 
-- http://www.skylarkjs.org/guide
- 
+## Usage
 
-## API
+- Using the skylark-utils library for a AMD module.  
+```js
+require({
+  'paths': {
+     'skylark-utils': 'http://registry.skylarkjs.org/packages/skylark-utils/v0.9.0/skylark-utils' 
+  }
+}, ['skylark-utils'], function(sutils) {
+  // sutils.mover.movable(elm,options) 
+});
+```
+
+- Using the skylark-utils library for a global object named skylark.  
+```js
+<script type="text/javascript" src="http://registry.skylarkjs.org/packages/skylark-utils/v0.9.0/skylark-utils.js"></script>
+<script>
+// skylark.mover.movable(elm,options);
+</script>
+```
+
+- Using the skylark-utils library for a AMD package.  
+```js
+require({
+  'packages': [
+    { 'name': 'skylark-utils', 'location': 'http://registry.skylarkjs.org/packages/skylark-utils/v0.9.0/skylark-utils/' }
+  ]
+}, ['skylark-utils/mover'], function(mover) {
+  // mover.movable(elm,options);
+});
+```
+
+## API Document
+skyalrk.js application framwork contains the above modules, so the module API documentation can refer to sklark.js's guilde
 
 - http://www.skylarkjs.org/api
 
 ## Examples
+Please access the following site for the execution of each example program under the "/examples" directory.
 
 - http://www.skylarkjs.org/examples
 - http://examples.skylarkjs.org/skylark-utils/
-
-
 
 ## License
 
