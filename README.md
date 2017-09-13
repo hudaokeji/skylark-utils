@@ -2,7 +2,7 @@
 An Universal HTML5 Javascript Library, Powerful and Concise.
 - Powerful  
 The skylark-utils library provides a comprehensive utility functions, let you to develop a HTML5 applications more simpler and more able to focus on the application logic itself.
-- Concise 
+- Concise  
 The skylark-utils library pursues a high modularity and high reusability，and was written to be straightforward and easy to read. Naturally, when the bug occurs, the program will be easier to debug. 
 
 ## What's included
