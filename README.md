@@ -6,6 +6,10 @@ The skylark-utils library provides a comprehensive utility functions, let you to
 The skylark-utils library pursues a high modularity and high reusability，and was written to be straightforward and easy to read. Naturally, when the bug occurs, the program will be easier to debug. 
 
 ## What's included
+The modules contained in the library are listed by category as follows:
+
+base api
+-------------
 
 - async  
 This module defines some APIs about Asynchronous function
@@ -13,6 +17,14 @@ This module defines some APIs about Asynchronous function
 This module defines some APIs about brower compatibility.
 - css  
 This module defines some APIs about stylesheet and rule.
+- langx  
+This module defines some APIs that extend language functionality
+- scripter  
+This module defines some APIs wrapping script load and unload.
+
+node level api
+----------------
+
 - datax  
 This module defines some APIs wrapping DOM attribute and property.
 - dnd  
@@ -27,21 +39,25 @@ This module defines some APIs wrapping dom query.
 This module defines some APIs wrapping DOM transition and animation.
 - geom  
 This module defines some APIs wrapping DOM geometry.
-- langx  
-This module defines some APIs that extend language functionality
 - mover  
 This module defines some APIs wrapping DOM move.
 - noder  
 This module defines some APIs wrapping DOM construction.
-- query   
-This module rovides a fully compatible API with jquery, and the code is simpler and more productive.
-- cripter  
-This module defines some APIs wrapping script load and unload.
 - styler  
 This module defines some APIs wrapping dom style and class.
-- vme  
+
+visual element api
+-------------------
+- velm  
 This module implemented VisuleElement type for wrapping a visual dom node.  
 VisualElment provides a number of methods encapsulated from the basic utility module function and supports chain calls.
+
+query api
+-------------
+
+- query   
+This module provides a similar jquery api,  [skykark-jquery](https://github.com/skylarkjs/skylark-jquery) based on this module provides an API that is fully compatible with [jquery](https://jquery.com/), and the code is simpler and more productive.
+
 
 ## Installation
 There are multiple ways to install the skylark-uitls library. 
