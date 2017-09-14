@@ -50,7 +50,7 @@
         font-weight: bold;
     }
     </style>
-    <script type="text/javascript" src="../../../dist/skylark-utils.js"></script>
+    <script type="text/javascript" src="../../dist/skylark-utils.js"></script>
 </head>
 
 <body>
@@ -85,11 +85,11 @@
         <div id="moveable3">You can move this paragraph. It is relatively positioned.</div>
     </div>
     <script>
-        skylark.mover.movable(skylark.finder.byId("moveable1"), {
-            handle: skylark.finder.byId("handle1")
+        skylarkjs.mover.movable(skylarkjs.finder.byId("moveable1"), {
+            handle: skylarkjs.finder.byId("handle1")
         });
-        skylark.mover.movable(skylark.finder.byId("moveable2"));
-        skylark.mover.movable(skylark.finder.byId("moveable3"));
+        skylarkjs.mover.movable(skylarkjs.finder.byId("moveable2"));
+        skylarkjs.mover.movable(skylarkjs.finder.byId("moveable3"));
     </script>
 </body>
 

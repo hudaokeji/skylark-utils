@@ -64,12 +64,12 @@
       return skylark;
     });
   } else {    
-	  var skylark = require("skylark-utils");
+	  var skylarkjs = require("skylark-utils/main");
 
   	if (isCmd) {
-  		exports = skylark;
+  		exports = skylarkjs;
     } else {
-    	globals.skylark = skylark;
+    	globals.skylarkjs = skylarkjs;
     }
   }
 
