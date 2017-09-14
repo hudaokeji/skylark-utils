@@ -40,9 +40,6 @@ var requireConfig = {
 module.exports = function() {
     var p =  new Promise(function(resolve, reject) {
      gulp.src(src)
-        .pipe(header(util.banner, {
-            pkg: util.pkg
-        }) )
         .on("error", reject)
         .pipe(gulp.dest(dest+util.pkg.name))
         .on("end",resolve);
