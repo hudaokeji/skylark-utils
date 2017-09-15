@@ -86,7 +86,7 @@ require({
 ```js
 <script type="text/javascript" src="http://registry.skylarkjs.org/packages/skylark-utils/v0.9.0/skylark-utils.js"></script>
 <script>
-// skylark.mover.movable(elm,options);
+// skylarkjs.mover.movable(elm,options);
 </script>
 ```
 
