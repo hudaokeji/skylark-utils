@@ -71,16 +71,16 @@
         <button>6s</button>
         <button>9s</button>
     </div>
-    <p>Hello World!</p>
+    <div id="hello">Hello World!</div>
+    <div id ="processing"></div> 
     <script>
-    require(["skylark-utils/query", "skylark-utils/noder"], function($, noder) {
-        var elm = $("p")[0];
-        $("button").on("click", function() {
+    require(["skylark-utils/finder", "skylark-utils/noder","skylark-utils/query"], function(finder, noder,query) {
+        var elm = finder.byId("hello");
+        query("button").on("click", function() {
             elm.style.opacity = 0;
-            var throb = noder.throb(elm, {
-                time: parseInt($(this).text()) * 1000,
+            var throb = noder.throb(finder.byId("processing"), {
+                time: parseInt(query(this).text()) * 1000,
                 callback: function() {
-                    throb.remove();
                     elm.style.opacity = 1;
                 }
             });

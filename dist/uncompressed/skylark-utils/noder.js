@@ -1,7 +1,8 @@
 define([
     "./skylark",
-    "./langx"
-], function(skylark, langx) {
+    "./langx",
+    "./styler"
+], function(skylark, langx, styler) {
     var isIE = !!navigator.userAgent.match(/Trident/g) || !!navigator.userAgent.match(/MSIE/g),
         fragmentRE = /^\s*<(\w+|!)[^>]*>/,
         singleTagRE = /^<(\w+)\s*\/?>(?:<\/\1>|)$/,
@@ -222,6 +223,24 @@ define([
         return this;
     }
 
+    function overlay(elm,params) {
+        var overlayDiv = createElement("div",params);
+        styler.css(overlayDiv, {
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: 0x7FFFFFFF,
+            opacity: 0.7
+        });
+        elm.appendChild(overlayDiv);
+        return overlayDiv;
+
+    }
+    
+
+
     function remove(node) {
         if (node && node.parentNode) {
             node.parentNode.removeChild(node);
@@ -235,13 +254,14 @@ define([
     }
 
     function throb(elm, params) {
+        params = params || {};
         var self = this,
             text = params.text,
             style = params.style,
             time = params.time,
             callback = params.callback,
             timer,
-            throbber = this.createElement("div", {
+            throbber = overlay(elm, {
                 className: params.className || "throbber",
                 style: style
             }),
@@ -254,22 +274,20 @@ define([
                     timer = null;
                 }
                 if (throbber) {
-                    self.unwrap(elm);
                     self.remove(throbber);
                     throbber = null;
                 }
             };
         if (text) throb.appendChild(this.createTextNode(text));
         throbber.appendChild(throb);
-        this.wrapper(elm, throbber);
-        var render = function() {
+        var end = function() {
+            remove();
             if (callback) callback();
         };
         if (time) {
-            timer = setTimeout(render, time);
-        } else {
-            render();
-        }
+            timer = setTimeout(end, time);
+        } 
+
         return {
             remove: remove
         };
