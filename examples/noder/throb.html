@@ -80,6 +80,7 @@
             elm.style.opacity = 0;
             var throb = noder.throb(finder.byId("processing"), {
                 time: parseInt(query(this).text()) * 1000,
+                text: "waiting",
                 callback: function() {
                     elm.style.opacity = 1;
                 }
