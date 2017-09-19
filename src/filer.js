@@ -1,10 +1,13 @@
 define([
     "./skylark",
     "./langx",
-    "./eventer"
-], function(skylark, langx, eventer) {
+    "./async",
+    "./eventer",
+    "./styler"
+], function(skylark, langx, async,eventer,styler) {
     var on = eventer.on,
         attr = eventer.attr,
+        Deferred = async.Deferred,
 
         fileInput,
         fileInputForm,
@@ -38,7 +41,7 @@ define([
                 input.value = "";
             };
         }
-        input.click();
+        fileInput.click();
     }
 
     var filer = function() {
@@ -46,6 +49,50 @@ define([
     };
 
     langx.mixin(filer , {
+        dropzone: function(elm, params) {
+            params = params || {};
+            var hoverClass = params.hoverClass || "dropzone",
+                droppedCallback = params.dropped;
+
+            var enterdCount = 0;
+            on(elm, "dragenter", function(e) {
+                if (e.dataTransfer && e.dataTransfer.types.indexOf("Files")>-1) {
+                    eventer.stop(e);
+                    enterdCount ++;
+                    styler.addClass(elm,hoverClass)
+                }
+            });
+
+            on(elm, "dragover", function(e) {
+                if (e.dataTransfer && e.dataTransfer.types.indexOf("Files")>-1) {
+                    eventer.stop(e);
+                }
+            });
+
+
+            on(elm, "dragleave", function(e) {
+                if (e.dataTransfer && e.dataTransfer.types.indexOf("Files")>-1) {
+                    enterdCount--
+                    if (enterdCount==0) {
+                        styler.removeClass(elm,hoverClass);
+                    }
+                }
+            });
+
+            on(elm, "drop", function(e) {
+                if (e.dataTransfer && e.dataTransfer.types.indexOf("Files")>-1) {
+                    styler.removeClass(elm,hoverClass)
+                    eventer.stop(e);
+                    if (droppedCallback) {
+                        droppedCallback(e.dataTransfer.files);
+                    }
+                }
+            });
+
+
+            return this;
+        },
+
         picker: function(elm, params) {
             params = params || {};
 
@@ -58,24 +105,48 @@ define([
             return this;
         },
 
-        dropzone: function(elm, params) {
+        readFile : function(file,params) {
             params = params || {};
-
-            var droppedCallback = params.dropped;
-
-            on(elm, "dragover,dragend", function(e) {
-                return false;
-            });
-
-            on(elm, "drop", function(e) {
-                e.preventDefault();
-                if (droppedCallback) {
-                    droppedCallback(e.dataTransfer.files);
+            var d = new Deferred,
+                reader = new FileReader();
+            
+            reader.onload = function(evt) {
+                d.resolve(evt.target.result);
+            };
+            reader.onerror = function(e) {
+                var code = e.target.error.code;
+                if (code === 2) {
+                    alert('please don\'t open this page using protocol fill:///');
+                } else {
+                    alert('error code: ' + code);
                 }
-            });
+            };
+            
+            if (params.asArrayBuffer){
+                reader.readAsArrayBuffer(file);
+            } else if (params.asDataUrl) {
+                reader.readAsDataURL(file);                
+            } else if (params.asText) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
 
-            return this;
+            return d.promise;
         },
+
+        writeFile : function(dataUri,name) {
+            if (window.navigator.msSaveBlob) { 
+             　　var blob = dataURItoBlob(dataUri);
+               window.navigator.msSaveBlob(blob, name);
+            } else {
+                var a = document.createElement('a');
+                a.href = dataUri;
+                a.setAttribute('download', name || 'noname');
+                a.dispatchEvent(new CustomEvent('click'));
+            }              
+        }
+
 
     });
 
