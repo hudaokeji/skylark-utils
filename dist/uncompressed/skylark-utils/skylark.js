@@ -1,6 +1,3 @@
-define([], function() {
-    var skylark = {
-
-    };
+define(["skylark-langx/skylark"], function(skylark) {
     return skylark;
 });

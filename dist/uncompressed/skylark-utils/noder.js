@@ -268,6 +268,7 @@ define([
             throb = this.createElement("div", {
                 className: "throb"
             }),
+            textNode = this.createTextNode(text || ""),
             remove = function() {
                 if (timer) {
                     clearTimeout(timer);
@@ -277,8 +278,13 @@ define([
                     self.remove(throbber);
                     throbber = null;
                 }
+            },
+            update = function(params) {
+                if (params && params.text && throbber) {
+                    textNode.nodeValue = params.text;
+                }
             };
-        if (text) throb.appendChild(this.createTextNode(text));
+        throb.appendChild(textNode);
         throbber.appendChild(throb);
         var end = function() {
             remove();
@@ -289,7 +295,8 @@ define([
         } 
 
         return {
-            remove: remove
+            remove: remove,
+            update: update
         };
     }
 

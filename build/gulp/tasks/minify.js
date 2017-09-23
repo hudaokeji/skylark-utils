@@ -16,15 +16,15 @@ var src = [util.src +  "**/*.js"];
 
 var dest = util.dest;
 
-
-var dest = util.dest;
-
 var requireConfig = {
     baseUrl: util.src,
     out : util.pkg.name + ".js",
     packages : [{
        name : util.pkg.name ,
        location :  util.src
+    },{
+       name : "skylark-langx" ,
+       location :  util.lib_langx+"uncompressed/skylark-langx"
 
     }],
     paths: {
@@ -34,6 +34,7 @@ var requireConfig = {
         util.pkg.name + "/main"
     ],
     exclude: [
+        "skylark-langx"
     ]
 };
 
@@ -56,6 +57,7 @@ module.exports = function() {
 
     return p.then(function(){
         return amdOptimize(requireConfig)
+            .on("error",gutil.log)
             .pipe(sourceMaps.init())
             .pipe(header(fs.readFileSync(util.allinoneHeader, 'utf8')))
             .pipe(footer(fs.readFileSync(util.allinoneFooter, 'utf8')))

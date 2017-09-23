@@ -66,8 +66,8 @@ npm install skylark-utils --save
 - bower  
 bower install skylark-utils
 - cdn  
-http://registry.skylarkjs.org/packages/skylark-utils/v0.9.0/skylark-utils.js    or  
-http://registry.skylarkjs.org/packages/skylark-utils/v0.9.0/uncompressed/skylark-utils.js 
+http://registry.skylarkjs.org/packages/skylark-utils/v0.9.1/skylark-utils.js    or  
+http://registry.skylarkjs.org/packages/skylark-utils/v0.9.1/uncompressed/skylark-utils.js 
 
 ## Usage
 
@@ -75,7 +75,7 @@ http://registry.skylarkjs.org/packages/skylark-utils/v0.9.0/uncompressed/skylark
 ```js
 require({
   'paths': {
-     'skylark-utils': 'http://registry.skylarkjs.org/packages/skylark-utils/v0.9.0/skylark-utils' 
+     'skylark-utils': 'http://registry.skylarkjs.org/packages/skylark-utils/v0.9.1/skylark-utils' 
   }
 }, ['skylark-utils'], function(sutils) {
   // sutils.mover.movable(elm,options) 
@@ -84,7 +84,7 @@ require({
 
 - Using the skylark-utils library for a global object named skylark.  
 ```js
-<script type="text/javascript" src="http://registry.skylarkjs.org/packages/skylark-utils/v0.9.0/skylark-utils.js"></script>
+<script type="text/javascript" src="http://registry.skylarkjs.org/packages/skylark-utils/v0.9.1/skylark-utils.js"></script>
 <script>
 // skylarkjs.mover.movable(elm,options);
 </script>
@@ -94,7 +94,7 @@ require({
 ```js
 require({
   'packages': [
-    { 'name': 'skylark-utils', 'location': 'http://registry.skylarkjs.org/packages/skylark-utils/v0.9.0/skylark-utils/' }
+    { 'name': 'skylark-utils', 'location': 'http://registry.skylarkjs.org/packages/skylark-utils/v0.9.1/skylark-utils/' }
   ]
 }, ['skylark-utils/mover'], function(mover) {
   // mover.movable(elm,options);
