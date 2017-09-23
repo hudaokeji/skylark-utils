@@ -1,7 +1,6 @@
 define([
     "./skylark",
     "./langx",
-    "./async",
     "./noder",
     "./datax",
     "./eventer",
@@ -9,7 +8,7 @@ define([
     "./geom",
     "./styler",
     "./fx"
-], function(skylark, langx, async, noder, datax, eventer, finder, geom, styler, fx) {
+], function(skylark, langx, noder, datax, eventer, finder, geom, styler, fx) {
     var some = Array.prototype.some,
         push = Array.prototype.push,
         every = Array.prototype.every,

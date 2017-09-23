@@ -3,9 +3,8 @@ define([
     "./langx",
     "./browser",
     "./styler",
-    "./eventer",
-    "./async"
-], function(skylark, langx, browser, styler, eventer, async) {
+    "./eventer"
+], function(skylark, langx, browser, styler, eventer) {
     var animationName,
         animationDuration,
         animationTiming,
@@ -129,7 +128,7 @@ define([
             eventer.on(elm, endEvent, wrappedCallback);
             // transitionEnd is not always firing on older Android phones
             // so make sure it gets fired
-            async.debounce(function() {
+            langx.debounce(function() {
                 if (fired) {
                     return;
                 }
@@ -143,7 +142,7 @@ define([
         styler.css(elm, cssValues);
 
         if (duration <= 0) {
-            async.debounce(function() {
+            langx.debounce(function() {
                 if (fired) {
                     return;
                 }
@@ -204,7 +203,7 @@ define([
 
             if (i >= freq + 1) {
                 clearInterval(interval);
-                if (callback) async.debounce(callback, 1000)();
+                if (callback) langx.debounce(callback, 1000)();
             }
         }, runEvery);
     }
