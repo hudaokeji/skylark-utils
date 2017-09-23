@@ -1,5 +1,8 @@
 # skylark-utils
 An Universal HTML5 Javascript Library, Powerful and Concise.
+
+## Features
+
 - Powerful  
 The skylark-utils library provides a comprehensive utility functions, let you to develop a HTML5 applications more simpler and more able to focus on the application logic itself.
 - Concise  
@@ -10,21 +13,15 @@ The modules contained in the library are listed by category as follows:
 
 base api
 -------------
-
-- async  
-This module defines some APIs about Asynchronous function
 - browser  
 This module defines some APIs about brower compatibility.
 - css  
 This module defines some APIs about stylesheet and rule.
-- langx  
-This module defines some APIs that extend language functionality
 - scripter  
 This module defines some APIs wrapping script load and unload.
 
 node level api
 ----------------
-
 - datax  
 This module defines some APIs wrapping DOM attribute and property.
 - dnd  
@@ -54,9 +51,21 @@ VisualElment provides a number of methods encapsulated from the basic utility mo
 
 query api
 -------------
-
 - query   
 This module provides a similar jquery api,  [skykark-jquery](https://github.com/skylarkjs/skylark-jquery) based on this module provides an API that is fully compatible with [jquery](https://jquery.com/), and the code is simpler and more productive.
+
+## Dependences
+| Project | Status | Description |
+|---------|--------|-------------|
+| [skylark-langx](https://github.com/skylarkjs/skylark-langx)   | v0.9.0 | Javascript language extension library |
+
+##  Different builds
+|  | build | Description |
+|---------|--------|-------------|
+| full | skylark-utils-all.js | included skylark-langx |
+| only utils | skylark-utils.js | not included skylark-langx |
+| full （development） | uncompressed/skylark-utils-all.js | included skylark-langx |
+| only utils （development）| uncompressed/skylark-utils.js | not included skylark-langx |
 
 
 ## Installation
@@ -111,6 +120,13 @@ Please access the following site for the execution of each example program under
 
 - http://www.skylarkjs.org/examples
 - http://examples.skylarkjs.org/skylark-utils/
+
+## Building skylark-utils
+
+- Ensure that Node.js is installed.
+- Run npm gulp -g to ensure gulp is installed.
+- Run npm install to ensure the required dependencies are installed.
+- change current directory to build/, and run gulp. The builds will be placed in the dist/ directory.
 
 ## License
 
