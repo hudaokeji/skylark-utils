@@ -1,18 +1,18 @@
 /**
  * skylark-utils - An Elegant HTML5 JavaScript Library.
  * @author Hudaokeji Co.,Ltd
- * @version v0.9.1
+ * @version v0.9.2
  * @link www.skylarkjs.org
  * @license MIT
  */
 (function(factory,globals) {
   var define = globals.define,
-  	  require = globals.require,
-  	  isAmd = (typeof define === 'function' && define.amd),
-  	  isCmd = (!isAmd && typeof exports !== 'undefined');
+      require = globals.require,
+      isAmd = (typeof define === 'function' && define.amd),
+      isCmd = (!isAmd && typeof exports !== 'undefined');
 
   if (!isAmd && !define) {
-	  var map = {};
+    var map = {};
     function absolute(relative, base) {
         if (relative[0]!==".") {
           return relative;
@@ -61,22 +61,20 @@
         return module.exports;
     };
   }
+  
+  if (!define) {
+     throw new Error("The module utility (ex: requirejs or skylark-utils) is not loaded!");
+  }
 
   factory(define,require);
 
-  if (isAmd) {
-    define([
-      "skylark-utils",
-    ],function(skylark){
-      return skylark;
-    });
-  } else {    
-	  var skylarkjs = require("skylark-utils/main");
+  if (!isAmd) {
+    var skylarkjs = require("skylark-utils/main");
 
-  	if (isCmd) {
-  		exports = skylarkjs;
+    if (isCmd) {
+      exports = skylarkjs;
     } else {
-    	globals.skylarkjs = skylarkjs;
+      globals.skylarkjs  = skylarkjs;
     }
   }
 
