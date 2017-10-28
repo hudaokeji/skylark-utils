@@ -4,6 +4,7 @@ define([
     "./css",
     "./datax",
     "./dnd",
+    "./devices",
     "./eventer",
     "./filer",
     "./finder",
