@@ -35,32 +35,29 @@
         <h4>Example : Skylark Drag and Drop Test: drag the list items over the dustbin, and drop them .</h4>
         <ul id="bin"></ul>
         <ul id="source">
-            <li><a id="one" href="#">one</a></li>
-            <li><a href="#" id="two">two</a></li>
-            <li><a href="#" id="three">three</a></li>
-            <li><a href="#" id="four">four</a></li>
-            <li><a href="#" id="five">five</a></li>
+            <li id = "li_1"><a id="one" href="#">one</a></li>
+            <li id = "li_2"><a href="#" id="two">two</a></li>
+            <li id = "li_3"><a href="#" id="three">three</a></li>
+            <li id = "li_4"><a href="#" id="four">four</a></li>
+            <li id = "li_5"><a href="#" id="five">five</a></li>
         </ul>
     </article>
     <script>
     require(["skylark-utils/finder", "skylark-utils/noder", "skylark-utils/dnd"], function(finder, noder, dnd) {
-        var links = finder.findAll("li > a"),
-            el = null;
-        function draggable(elm) {
-            dnd.draggable(elm, {
-                started: function(e) {
-                    e.ghost = elm;
-                    e.transfer = {
-                        "text": elm.id
-                    };
-                }
-            });
-        }
+        var source = document.querySelector('#source');
+            dnd.draggable(source,{
+            handle : "li",
+            preparing : function(e){
+                e.dragSource = e.handleElm;
+            },
+            started: function(e) {
+                e.ghost = e.dragSource;
+                e.transfer = {
+                    "text": e.dragSource.id
+                };
+            }
 
-        for (var i = 0; i < links.length; i++) {
-            draggable(links[i]);
-
-        }
+        });
 
         var bin = document.querySelector('#bin');
         dnd.droppable(bin, {
@@ -71,8 +68,7 @@
             },
             dropped: function(e) {
                 var el = document.getElementById(e.transfer["text"]);
-                noder.append(bin, el.parentNode);
-
+                noder.append(bin, el);
             }
         });
     });
