@@ -15,6 +15,7 @@ define([
     "./noder",
     "./query",
     "./scripter",
+    "./storages",
     "./styler",
     "./touchx",
     "./langx",
