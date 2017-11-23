@@ -189,6 +189,30 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
     })();
 
 
+   function clone( /*anything*/ src) {
+        var copy;
+        if (src === undefined || src === null) {
+            copy =  src;
+        } else if (src.clone){
+            copy = src.clone();
+        } else if (isArray(src)) {
+            copy = [];
+            for (var i = 0;i<src.length;i++) {
+                copy.push(clone(src[i]));
+            }
+        } else if (isPlainObject(src)){
+            copy = {};
+            for (var key in src){
+                copy[key] = clone(src[key]);
+            } 
+        } else {
+            copy = src;
+        }
+
+        return copy;
+
+    }
+
     function debounce(fn, wait) {
         var timeout,
             args,
@@ -202,6 +226,21 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
             timeout = setTimeout(later, wait);
         };
     }
+
+    var delegate = (function(){
+            // boodman/crockford delegation w/ cornford optimization
+            function TMP(){}
+            return function(obj, props){
+                TMP.prototype = obj;
+                var tmp = new TMP();
+                TMP.prototype = null;
+                if(props){
+                    mixin(tmp, props);
+                }
+                return tmp; // Object
+            };
+    })();
+
 
     var Deferred = function() {
         this.promise = new Promise(function(resolve, reject) {
@@ -276,7 +315,7 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         on: function(events,selector,data,callback,ctx,/*used internally*/one) {
 	        var self = this,
 	        	_hub = this._hub || (this._hub = {});
-	        
+
 	        if (isPlainObject(events)) {
 	        	ctx = callback;
 	            each(events, function(type, fn) {
@@ -284,24 +323,24 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 	            });
 	            return this;
 	        }
-	        
+
 	        if (!isString(selector) && !isFunction(callback)) {
 	        	ctx = callback;
 	            callback = data;
 	            data = selector;
 	            selector = undefined;
 	        }
-	        
+
 	        if (isFunction(data)) {
 	            ctx = callback;
 	            callback = data;
 	            data = null;
 	        }
-	
+
 	        if (isString(events)) {
 	            events = events.split(/\s/)
 	        }
-	        
+
 	        events.forEach(function(name) {
 	            (_hub[name] || (_hub[name] = [])).push({
 	                fn: callback,
@@ -311,25 +350,25 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 	                one: one
 	            });
 	        });
-	
+
 	        return this;
 	    },
-	
+
 	    one: function(events,selector,data,callback,ctx) {
 	        return this.on(events,selector,data,callback,ctx,1);
 	    },
-	
+
 	    trigger: function(e/*,argument list*/) {
 	    	if (!this._hub) {
 	    		return this;
 	    	}
-	    	
+
 	    	var self = this;
-	    	
+
 	    	if (isString(e)) {
 	    		e = new CustomEvent(e);
 	    	}
-	    	
+
 	        var args = slice.call(arguments,1);
             if (isDefined(args)) {
                 args = [e].concat(args);
@@ -341,10 +380,10 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 		        if (!listeners){
 		        	return;
 		        }
-	        
+
 		        var len = listeners.length,
 		        	reCompact = false;
-		        
+
 		        for (var i = 0; i < len; i++) {
 		        	var listener = listeners[i];
 		            if (e.data) {
@@ -358,38 +397,38 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 		            if (listener.one){
 		            	listeners[i] = null;
 		            	reCompact = true;
-		            }	        		
+		            }
 		        }
-		        
+
 		        if (reCompact){
 		        	self._hub[eventName] = compact(listeners);
 		        }
-	        	
+
 	        });
 	        return this;
 	    },
-	
+
 	    listened: function(event) {
 	        var evtArr = ((this._hub || (this._events = {}))[event] || []);
 	        return evtArr.length > 0;
 	    },
-	
+
 	    listenTo: function(obj, event, callback,/*used internally*/one) {
 	        if (!obj) {
 	        	return this;
 	        }
 
-	        // Bind callbacks on obj, 
+	        // Bind callbacks on obj,
 	        if (isString(callback)) {
 	        	callback = this[callback];
 	        }
-	        
+
 	        if (one){
 		        obj.one(event,callback,this);
 	        } else {
 		        obj.on(event,callback,this);
 	        }
-	        
+
 	        //keep track of them on listening.
 	        var listeningTo = this._listeningTo || (this._listeningTo = []),
 	        	listening;
@@ -414,38 +453,38 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 	        if (listeningEvent.indexOf(callback)==-1) {
 	        	listeningEvent.push(callback);
 	        }
-	
+
 	        return this;
 	    },
-	    
+
 	    listenToOnce: function(obj, event, callback) {
 	    	return this.listenTo(obj,event,callback,1);
 	    },
-	    
+
 	    off: function(events, callback) {
 	        var _hub = this._hub || (this._hub = {});
 	        if (isString(events)) {
 	            events = events.split(/\s/)
 	        }
-	
+
 	        events.forEach(function(name) {
 	            var evts = _hub[name];
 	            var liveEvents = [];
-	
+
 	            if (evts && callback) {
 	                for (var i = 0, len = evts.length; i < len; i++) {
 	                    if (evts[i].fn !== callback && evts[i].fn._ !== callback)
 	                        liveEvents.push(evts[i]);
 	                }
 	            }
-	
+
 	            if (liveEvents.length) {
 	            	_hub[name] = liveEvents;
 	            } else {
 	            	delete _hub[name];
 	            }
 	        });
-	
+
 	        return this;
 	    },
 	    unlistenTo : function(obj, event, callback) {
@@ -455,46 +494,46 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 	        }
 	        for (var i = 0; i < listeningTo.length; i++) {
 	          var listening = listeningTo[i];
-	          
+
 	          if (obj && obj != listening.obj) {
 	        	  continue;
 	          }
-	          
+
 	          var listeningEvents = listening.events;
 	          for (var eventName in listeningEvents) {
 	        	 if (event && event != eventName) {
 	        		 continue;
 	        	 }
-	        	 
+
 	        	 listeningEvent = listeningEvents[eventName];
-	        	 
+
 	        	 for (var j=0;j<listeningEvent.length;j++) {
 	        		 if (!callback || callback == listeningEvent[i]) {
 	        			 listening.obj.off(eventName, listeningEvent[i], this);
 	        			 listeningEvent[i] = null;
 	        		 }
 	        	 }
-	        	 
+
 	        	 listeningEvent = listeningEvents[eventName] = compact(listeningEvent);
-	        	 
+
 	        	 if (isEmptyObject(listeningEvent)) {
-	        		 listeningEvents[eventName] = null; 
+	        		 listeningEvents[eventName] = null;
 	        	 }
-	        	 
+
 	          }
-	          
+
 	          if (isEmptyObject(listeningEvents)) {
 	        	  listeningTo[i] = null;
 	          }
 	        }
-	        
+
 	        listeningTo = this._listeningTo = compact(listeningTo);
 	        if (isEmptyObject(listeningTo)) {
 	        	this._listeningTo = null;
 	        }
-        
+
 	        return this;
-	    }  
+	    }
     });
 
     function compact(array) {
@@ -502,15 +541,15 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
             return item != null;
         });
     }
-    
+
     function dasherize(str) {
         return str.replace(/::/g, '/')
             .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
             .replace(/([a-z\d])([A-Z])/g, '$1_$2')
             .replace(/_/g, '-')
             .toLowerCase();
-    }    
-    
+    }
+
     function deserializeValue(value) {
         try {
             return value ?
@@ -635,7 +674,7 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 
         return -1;
     }
-    
+
     function inherit(ctor, base) {
         var f = function() {};
         f.prototype = base.prototype;
@@ -648,7 +687,7 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
     }
 
     function isArrayLike(obj) {
-        return !isString(obj) && typeof obj.length == 'number';
+        return !isString(obj) && !(obj.nodeName && obj.nodeName == "#text") && typeof obj.length == 'number';
     }
 
     function isBoolean(obj) {
@@ -776,13 +815,13 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
     function trim(str) {
         return str == null ? "" : String.prototype.trim.call(str);
     }
-    
+
     function removeItem(items,item) {
     	if (isArray(items)) {
         	var idx = items.indexOf(item);
         	if (idx != -1) {
         		items.splice(idx, 1);
-        	}    		
+        	}
     	} else if (isPlainObject(items)) {
     		for (var key in items) {
     			if (items[key] == item) {
@@ -908,7 +947,7 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
     function uid(obj) {
         return obj._uid || obj.id || (obj._uid = _uid++);
     }
-    
+
     function uniq(array) {
         return filter.call(array, function(item, idx) {
             return array.indexOf(item) == idx;
@@ -918,19 +957,22 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
     function langx() {
         return langx;
     }
-    
+
     mixin(langx, {
         camelCase: function(str) {
             return str.replace(/-([\da-z])/g, function(a) {
                 return a.toUpperCase().replace('-', '');
             });
         },
+        clone: clone,
 
         compact: compact,
 
         dasherize: dasherize,
 
         debounce: debounce,
+
+        delegate: delegate,
 
         Deferred: Deferred,
 
@@ -959,7 +1001,7 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         },
 
         isDocument: isDocument,
-        
+
         isEmptyObject: isEmptyObject,
 
         isFunction: isFunction,
@@ -995,7 +1037,7 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         proxy: proxy,
 
         removeItem: removeItem,
-        
+
         returnTrue: function() {
             return true;
         },
@@ -1006,6 +1048,10 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 
         safeMixin: safeMixin,
 
+        serializeValue : function(value) {
+            return JSON.stringify(value)
+        },
+
         substitute: substitute,
 
         toPixel: toPixel,
@@ -1013,14 +1059,16 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         trim: trim,
 
         type: type,
-        
+
         uid: uid,
-        
+
         uniq: uniq,
 
         upperFirst: function(str) {
             return str.charAt(0).toUpperCase() + str.slice(1);
-        }
+        },
+
+        URL: window.URL || window.webkitURL
 
     });
 
@@ -1111,7 +1159,10 @@ define('skylark-utils/browser',[
 
         location: function() {
             return window.location;
-        }
+        },
+
+        support : {}
+
     });
 
     testEl = null;
@@ -1488,6 +1539,11 @@ define('skylark-utils/noder',[
         return elm.ownerDocument;
     }
 
+    function ownerWindow(elm) {
+        var doc = ownerDoc(elm);
+        return  doc.defaultView || doc.parentWindow;
+    } 
+
     function after(node, placing, copyByClone) {
         var refNode = node,
             parent = refNode.parentNode;
@@ -1692,6 +1748,8 @@ define('skylark-utils/noder',[
         isDoc: isDoc,
 
         ownerDoc: ownerDoc,
+
+        ownerWindow : ownerWindow,
 
         after: after,
 
@@ -2183,6 +2241,10 @@ define('skylark-utils/finder',[
             return (idx === 0);
         },
 
+        gt: function(elm, idx, nodes, value) {
+            return (idx > value);
+        },
+
         has: function(elm, idx, nodes, sel) {
             return local.querySelector(elm, sel).length > 0;
         },
@@ -2193,6 +2255,10 @@ define('skylark-utils/finder',[
 
         last: function(elm, idx, nodes) {
             return (idx === nodes.length - 1);
+        },
+
+        lt: function(elm, idx, nodes, value) {
+            return (idx < value);
         },
 
         parent: function(elm) {
@@ -2241,7 +2307,7 @@ define('skylark-utils/finder',[
                 if (this.pseudos[part.key]) {
                     customPseudos.push(part);
                 } else {
-                    if (part.value !== undefine) {
+                    if (part.value !== undefined) {
                         nativeSelector += (":" + part.key + "(" + JSON.stringify(part))
                     }
                 }
@@ -2462,26 +2528,41 @@ define('skylark-utils/finder',[
 
 
     function ancestor(node, selector, root) {
+        var rootIsSelector = root && langx.isString(root);
         while (node = node.parentNode) {
             if (matches(node, selector)) {
                 return node;
             }
-            if (node == root) {
-                break;
-            }
+            if (root) {
+                if (rootIsSelector) {
+                    if (matches(node,root)) {
+                        break;
+                    }
+                } else if (node == root) {
+                    break;
+                }
+            } 
         }
         return null;
     }
 
-    function ancestors(node, selector) {
-        var ret = [];
+    function ancestors(node, selector,root) {
+        var ret = [],
+            rootIsSelector = root && langx.isString(root);
         while (node = node.parentNode) {
             if (matches(node, selector)) {
                 ret.push(node);
             }
-            if (node == ret) {
-                break;
-            }
+            if (root) {
+                if (rootIsSelector) {
+                    if (matches(node,root)) {
+                        break;
+                    }
+                } else if (node == root) {
+                    break;
+                }
+            } 
+
         }
         return ret;
     }
@@ -2947,6 +3028,7 @@ define('skylark-utils/geom',[
         return parent;
     }
 
+
     function borderExtents(elm) {
         var s = getComputedStyle(elm);
         return {
@@ -3226,8 +3308,7 @@ define('skylark-utils/geom',[
             return { x: x, y: y };
         }
 
-        var elm = this.getEl(),
-            parentElm = elm.parentNode;
+        var parentElm = elm.parentNode;
         var x, y, width, height, parentWidth, parentHeight;
         var pos = getOffset(elm, parentElm);
 
@@ -3707,15 +3788,16 @@ define('skylark-utils/eventer',[
             // selector Optional
             register: function(event, callback, options) {
                 // Seperate the event from the namespace
-                var parsed = parse(event);
-
-                event = parsed.type;
+                var parsed = parse(event),
+                    event = parsed.type,
+                    specialEvent = specialEvents[event],
+                    bindingEvent = specialEvent && (specialEvent.bindType || specialEvent.bindEventName);
 
                 var events = this._handler;
 
                 // Check if there is already a handler for this event
                 if (events[event] === undefined) {
-                    events[event] = new EventBindings(this._target, event);
+                    events[event] = new EventBindings(this._target, bindingEvent || event);
                 }
 
                 // Register the new callback function
@@ -3966,9 +4048,11 @@ define('skylark-utils/eventer',[
 
         shortcuts: shortcuts,
 
+        special : specialEvents,
+
         stop: stop,
 
-        trigger: trigger,
+        trigger: trigger
 
     });
 
@@ -5357,8 +5441,310 @@ define('skylark-utils/mover',[
         removeAttr = datax.removeAttr,
         offset = geom.pagePosition,
         addClass = styler.addClass,
-        height = geom.height;
+        height = geom.height,
+        some = Array.prototype.some,
+        map = Array.prototype.map;
 
+    function _place(/*DomNode*/ node, choices, layoutNode, aroundNodeCoords){
+        // summary:
+        //      Given a list of spots to put node, put it at the first spot where it fits,
+        //      of if it doesn't fit anywhere then the place with the least overflow
+        // choices: Array
+        //      Array of elements like: {corner: 'TL', pos: {x: 10, y: 20} }
+        //      Above example says to put the top-left corner of the node at (10,20)
+        // layoutNode: Function(node, aroundNodeCorner, nodeCorner, size)
+        //      for things like tooltip, they are displayed differently (and have different dimensions)
+        //      based on their orientation relative to the parent.   This adjusts the popup based on orientation.
+        //      It also passes in the available size for the popup, which is useful for tooltips to
+        //      tell them that their width is limited to a certain amount.   layoutNode() may return a value expressing
+        //      how much the popup had to be modified to fit into the available space.   This is used to determine
+        //      what the best placement is.
+        // aroundNodeCoords: Object
+        //      Size of aroundNode, ex: {w: 200, h: 50}
+
+        // get {x: 10, y: 10, w: 100, h:100} type obj representing position of
+        // viewport over document
+
+        var doc = noder.ownerDoc(node),
+            win = noder.ownerWindow(doc),
+            view = geom.size(win);
+
+        view.left = 0;
+        view.top = 0;
+
+        if(!node.parentNode || String(node.parentNode.tagName).toLowerCase() != "body"){
+            doc.body.appendChild(node);
+        }
+
+        var best = null;
+
+        some.apply(choices, function(choice){
+            var corner = choice.corner;
+            var pos = choice.pos;
+            var overflow = 0;
+
+            // calculate amount of space available given specified position of node
+            var spaceAvailable = {
+                w: {
+                    'L': view.left + view.width - pos.x,
+                    'R': pos.x - view.left,
+                    'M': view.width
+                }[corner.charAt(1)],
+
+                h: {
+                    'T': view.top + view.height - pos.y,
+                    'B': pos.y - view.top,
+                    'M': view.height
+                }[corner.charAt(0)]
+            };
+
+            if(layoutNode){
+                var res = layoutNode(node, choice.aroundCorner, corner, spaceAvailable, aroundNodeCoords);
+                overflow = typeof res == "undefined" ? 0 : res;
+            }
+
+            var bb = geom.size(node);
+
+            // coordinates and size of node with specified corner placed at pos,
+            // and clipped by viewport
+            var
+                startXpos = {
+                    'L': pos.x,
+                    'R': pos.x - bb.width,
+                    'M': Math.max(view.left, Math.min(view.left + view.width, pos.x + (bb.width >> 1)) - bb.width) // M orientation is more flexible
+                }[corner.charAt(1)],
+
+                startYpos = {
+                    'T': pos.y,
+                    'B': pos.y - bb.height,
+                    'M': Math.max(view.top, Math.min(view.top + view.height, pos.y + (bb.height >> 1)) - bb.height)
+                }[corner.charAt(0)],
+
+                startX = Math.max(view.left, startXpos),
+                startY = Math.max(view.top, startYpos),
+                endX = Math.min(view.left + view.width, startXpos + bb.width),
+                endY = Math.min(view.top + view.height, startYpos + bb.height),
+                width = endX - startX,
+                height = endY - startY;
+
+            overflow += (bb.width - width) + (bb.height - height);
+
+            if(best == null || overflow < best.overflow){
+                best = {
+                    corner: corner,
+                    aroundCorner: choice.aroundCorner,
+                    left: startX,
+                    top: startY,
+                    width: width,
+                    height: height,
+                    overflow: overflow,
+                    spaceAvailable: spaceAvailable
+                };
+            }
+
+            return !overflow;
+        });
+
+        // In case the best position is not the last one we checked, need to call
+        // layoutNode() again.
+        if(best.overflow && layoutNode){
+            layoutNode(node, best.aroundCorner, best.corner, best.spaceAvailable, aroundNodeCoords);
+        }
+
+
+        geom.boundingPosition(node,best);
+
+        return best;
+    }
+
+    function at(node, pos, corners, padding, layoutNode){
+        var choices = map.apply(corners, function(corner){
+            var c = {
+                corner: corner,
+                aroundCorner: reverse[corner],  // so TooltipDialog.orient() gets aroundCorner argument set
+                pos: {x: pos.x,y: pos.y}
+            };
+            if(padding){
+                c.pos.x += corner.charAt(1) == 'L' ? padding.x : -padding.x;
+                c.pos.y += corner.charAt(0) == 'T' ? padding.y : -padding.y;
+            }
+            return c;
+        });
+
+        return _place(node, choices, layoutNode);
+    }
+
+    function around(
+        /*DomNode*/     node,
+        /*DomNode|__Rectangle*/ anchor,
+        /*String[]*/    positions,
+        /*Boolean*/     leftToRight,
+        /*Function?*/   layoutNode){
+
+        // summary:
+        //      Position node adjacent or kitty-corner to anchor
+        //      such that it's fully visible in viewport.
+        // description:
+        //      Place node such that corner of node touches a corner of
+        //      aroundNode, and that node is fully visible.
+        // anchor:
+        //      Either a DOMNode or a rectangle (object with x, y, width, height).
+        // positions:
+        //      Ordered list of positions to try matching up.
+        //
+        //      - before: places drop down to the left of the anchor node/widget, or to the right in the case
+        //          of RTL scripts like Hebrew and Arabic; aligns either the top of the drop down
+        //          with the top of the anchor, or the bottom of the drop down with bottom of the anchor.
+        //      - after: places drop down to the right of the anchor node/widget, or to the left in the case
+        //          of RTL scripts like Hebrew and Arabic; aligns either the top of the drop down
+        //          with the top of the anchor, or the bottom of the drop down with bottom of the anchor.
+        //      - before-centered: centers drop down to the left of the anchor node/widget, or to the right
+        //          in the case of RTL scripts like Hebrew and Arabic
+        //      - after-centered: centers drop down to the right of the anchor node/widget, or to the left
+        //          in the case of RTL scripts like Hebrew and Arabic
+        //      - above-centered: drop down is centered above anchor node
+        //      - above: drop down goes above anchor node, left sides aligned
+        //      - above-alt: drop down goes above anchor node, right sides aligned
+        //      - below-centered: drop down is centered above anchor node
+        //      - below: drop down goes below anchor node
+        //      - below-alt: drop down goes below anchor node, right sides aligned
+        // layoutNode: Function(node, aroundNodeCorner, nodeCorner)
+        //      For things like tooltip, they are displayed differently (and have different dimensions)
+        //      based on their orientation relative to the parent.   This adjusts the popup based on orientation.
+        // leftToRight:
+        //      True if widget is LTR, false if widget is RTL.   Affects the behavior of "above" and "below"
+        //      positions slightly.
+        // example:
+        //  |   placeAroundNode(node, aroundNode, {'BL':'TL', 'TR':'BR'});
+        //      This will try to position node such that node's top-left corner is at the same position
+        //      as the bottom left corner of the aroundNode (ie, put node below
+        //      aroundNode, with left edges aligned).   If that fails it will try to put
+        //      the bottom-right corner of node where the top right corner of aroundNode is
+        //      (ie, put node above aroundNode, with right edges aligned)
+        //
+
+        // If around is a DOMNode (or DOMNode id), convert to coordinates.
+        var aroundNodePos;
+        if(typeof anchor == "string" || "offsetWidth" in anchor || "ownerSVGElement" in anchor){
+            aroundNodePos = domGeometry.position(anchor, true);
+
+            // For above and below dropdowns, subtract width of border so that popup and aroundNode borders
+            // overlap, preventing a double-border effect.  Unfortunately, difficult to measure the border
+            // width of either anchor or popup because in both cases the border may be on an inner node.
+            if(/^(above|below)/.test(positions[0])){
+                var anchorBorder = domGeometry.getBorderExtents(anchor),
+                    anchorChildBorder = anchor.firstChild ? domGeometry.getBorderExtents(anchor.firstChild) : {t:0,l:0,b:0,r:0},
+                    nodeBorder =  domGeometry.getBorderExtents(node),
+                    nodeChildBorder = node.firstChild ? domGeometry.getBorderExtents(node.firstChild) : {t:0,l:0,b:0,r:0};
+                aroundNodePos.y += Math.min(anchorBorder.t + anchorChildBorder.t, nodeBorder.t + nodeChildBorder.t);
+                aroundNodePos.h -=  Math.min(anchorBorder.t + anchorChildBorder.t, nodeBorder.t+ nodeChildBorder.t) +
+                    Math.min(anchorBorder.b + anchorChildBorder.b, nodeBorder.b + nodeChildBorder.b);
+            }
+        }else{
+            aroundNodePos = anchor;
+        }
+
+        // Compute position and size of visible part of anchor (it may be partially hidden by ancestor nodes w/scrollbars)
+        if(anchor.parentNode){
+            // ignore nodes between position:relative and position:absolute
+            var sawPosAbsolute = domStyle.getComputedStyle(anchor).position == "absolute";
+            var parent = anchor.parentNode;
+            while(parent && parent.nodeType == 1 && parent.nodeName != "BODY"){  //ignoring the body will help performance
+                var parentPos = domGeometry.position(parent, true),
+                    pcs = domStyle.getComputedStyle(parent);
+                if(/relative|absolute/.test(pcs.position)){
+                    sawPosAbsolute = false;
+                }
+                if(!sawPosAbsolute && /hidden|auto|scroll/.test(pcs.overflow)){
+                    var bottomYCoord = Math.min(aroundNodePos.y + aroundNodePos.h, parentPos.y + parentPos.h);
+                    var rightXCoord = Math.min(aroundNodePos.x + aroundNodePos.w, parentPos.x + parentPos.w);
+                    aroundNodePos.x = Math.max(aroundNodePos.x, parentPos.x);
+                    aroundNodePos.y = Math.max(aroundNodePos.y, parentPos.y);
+                    aroundNodePos.h = bottomYCoord - aroundNodePos.y;
+                    aroundNodePos.w = rightXCoord - aroundNodePos.x;
+                }
+                if(pcs.position == "absolute"){
+                    sawPosAbsolute = true;
+                }
+                parent = parent.parentNode;
+            }
+        }           
+
+        var x = aroundNodePos.x,
+            y = aroundNodePos.y,
+            width = "w" in aroundNodePos ? aroundNodePos.w : (aroundNodePos.w = aroundNodePos.width),
+            height = "h" in aroundNodePos ? aroundNodePos.h : (kernel.deprecated("place.around: dijit/place.__Rectangle: { x:"+x+", y:"+y+", height:"+aroundNodePos.height+", width:"+width+" } has been deprecated.  Please use { x:"+x+", y:"+y+", h:"+aroundNodePos.height+", w:"+width+" }", "", "2.0"), aroundNodePos.h = aroundNodePos.height);
+
+        // Convert positions arguments into choices argument for _place()
+        var choices = [];
+        function push(aroundCorner, corner){
+            choices.push({
+                aroundCorner: aroundCorner,
+                corner: corner,
+                pos: {
+                    x: {
+                        'L': x,
+                        'R': x + width,
+                        'M': x + (width >> 1)
+                    }[aroundCorner.charAt(1)],
+                    y: {
+                        'T': y,
+                        'B': y + height,
+                        'M': y + (height >> 1)
+                    }[aroundCorner.charAt(0)]
+                }
+            })
+        }
+        array.forEach(positions, function(pos){
+            var ltr =  leftToRight;
+            switch(pos){
+                case "above-centered":
+                    push("TM", "BM");
+                    break;
+                case "below-centered":
+                    push("BM", "TM");
+                    break;
+                case "after-centered":
+                    ltr = !ltr;
+                    // fall through
+                case "before-centered":
+                    push(ltr ? "ML" : "MR", ltr ? "MR" : "ML");
+                    break;
+                case "after":
+                    ltr = !ltr;
+                    // fall through
+                case "before":
+                    push(ltr ? "TL" : "TR", ltr ? "TR" : "TL");
+                    push(ltr ? "BL" : "BR", ltr ? "BR" : "BL");
+                    break;
+                case "below-alt":
+                    ltr = !ltr;
+                    // fall through
+                case "below":
+                    // first try to align left borders, next try to align right borders (or reverse for RTL mode)
+                    push(ltr ? "BL" : "BR", ltr ? "TL" : "TR");
+                    push(ltr ? "BR" : "BL", ltr ? "TR" : "TL");
+                    break;
+                case "above-alt":
+                    ltr = !ltr;
+                    // fall through
+                case "above":
+                    // first try to align left borders, next try to align right borders (or reverse for RTL mode)
+                    push(ltr ? "TL" : "TR", ltr ? "BL" : "BR");
+                    push(ltr ? "TR" : "TL", ltr ? "BR" : "BL");
+                    break;
+                default:
+                    // To assist dijit/_base/place, accept arguments of type {aroundCorner: "BL", corner: "TL"}.
+                    // Not meant to be used directly.  Remove for 2.0.
+                    push(pos.aroundCorner, pos.corner);
+            }
+        });
+
+        var position = _place(node, choices, layoutNode, {w: width, h: height});
+        position.aroundNodePos = aroundNodePos;
+
+        return position;
+    }
 
     function movable(elm, params) {
         function updateWithTouchData(e) {
@@ -5495,6 +5881,9 @@ define('skylark-utils/mover',[
     }
 
     langx.mixin(mover, {
+        around : around,
+
+        at: at, 
 
         movable: movable
 
@@ -5577,6 +5966,26 @@ define('skylark-utils/query',[
             }
         }
     }
+
+    function wrapper_selector_until(func, context, last) {
+        return function(util,selector) {
+            var self = this,
+                params = slice.call(arguments);
+            if (selector === undefined) {
+                selector = util;
+                util = undefined;
+            }
+            var result = this.map(function(idx, elem) {
+                return func.apply(context, last ? [elem,util] : [elem, selector,util]);
+            });
+            if (last && selector) {
+                return result.filter(selector);
+            } else {
+                return result;
+            }
+        }
+    }
+
 
     function wrapper_every_act(func, context) {
         return function() {
@@ -5848,6 +6257,9 @@ define('skylark-utils/query',[
 
             parents: wrapper_selector(finder.ancestors, finder),
 
+            parentsUntil: wrapper_selector_until(finder.ancestors, finder),
+
+
             parent: wrapper_selector(finder.parent, finder),
 
             children: wrapper_selector(finder.children, finder),
@@ -6030,6 +6442,9 @@ define('skylark-utils/query',[
 
                 if (value === undefined) {
                     var el = this[0];
+                    if (!el) {
+                        return undefined;
+                    }
                     var cb = geom.size(el);
                     if (margin) {
                         var me = geom.marginExtents(el);
