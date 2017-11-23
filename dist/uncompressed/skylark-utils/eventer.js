@@ -321,15 +321,16 @@ define([
             // selector Optional
             register: function(event, callback, options) {
                 // Seperate the event from the namespace
-                var parsed = parse(event);
-
-                event = parsed.type;
+                var parsed = parse(event),
+                    event = parsed.type,
+                    specialEvent = specialEvents[event],
+                    bindingEvent = specialEvent && (specialEvent.bindType || specialEvent.bindEventName);
 
                 var events = this._handler;
 
                 // Check if there is already a handler for this event
                 if (events[event] === undefined) {
-                    events[event] = new EventBindings(this._target, event);
+                    events[event] = new EventBindings(this._target, bindingEvent || event);
                 }
 
                 // Register the new callback function
@@ -580,9 +581,11 @@ define([
 
         shortcuts: shortcuts,
 
+        special : specialEvents,
+
         stop: stop,
 
-        trigger: trigger,
+        trigger: trigger
 
     });
 

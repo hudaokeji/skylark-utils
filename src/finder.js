@@ -276,6 +276,10 @@ define([
             return (idx === 0);
         },
 
+        gt: function(elm, idx, nodes, value) {
+            return (idx > value);
+        },
+
         has: function(elm, idx, nodes, sel) {
             return local.querySelector(elm, sel).length > 0;
         },
@@ -286,6 +290,10 @@ define([
 
         last: function(elm, idx, nodes) {
             return (idx === nodes.length - 1);
+        },
+
+        lt: function(elm, idx, nodes, value) {
+            return (idx < value);
         },
 
         parent: function(elm) {
@@ -334,7 +342,7 @@ define([
                 if (this.pseudos[part.key]) {
                     customPseudos.push(part);
                 } else {
-                    if (part.value !== undefine) {
+                    if (part.value !== undefined) {
                         nativeSelector += (":" + part.key + "(" + JSON.stringify(part))
                     }
                 }
@@ -555,26 +563,41 @@ define([
 
 
     function ancestor(node, selector, root) {
+        var rootIsSelector = root && langx.isString(root);
         while (node = node.parentNode) {
             if (matches(node, selector)) {
                 return node;
             }
-            if (node == root) {
-                break;
-            }
+            if (root) {
+                if (rootIsSelector) {
+                    if (matches(node,root)) {
+                        break;
+                    }
+                } else if (node == root) {
+                    break;
+                }
+            } 
         }
         return null;
     }
 
-    function ancestors(node, selector) {
-        var ret = [];
+    function ancestors(node, selector,root) {
+        var ret = [],
+            rootIsSelector = root && langx.isString(root);
         while (node = node.parentNode) {
             if (matches(node, selector)) {
                 ret.push(node);
             }
-            if (node == ret) {
-                break;
-            }
+            if (root) {
+                if (rootIsSelector) {
+                    if (matches(node,root)) {
+                        break;
+                    }
+                } else if (node == root) {
+                    break;
+                }
+            } 
+
         }
         return ret;
     }
