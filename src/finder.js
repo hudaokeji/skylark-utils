@@ -265,7 +265,7 @@ define([
         },
 
         eq: function(elm, idx, nodes, value) {
-            return (idx === value);
+            return (idx == value);
         },
 
         'focus': function(elm) {
@@ -284,6 +284,7 @@ define([
             return local.querySelector(elm, sel).length > 0;
         },
 
+
         hidden: function(elm) {
             return !local.pseudos["visible"](elm);
         },
@@ -294,6 +295,10 @@ define([
 
         lt: function(elm, idx, nodes, value) {
             return (idx < value);
+        },
+
+        not: function(elm, idx, nodes, sel) {
+            return local.match(elm, sel);
         },
 
         parent: function(elm) {
@@ -329,8 +334,8 @@ define([
         }
         if (attributes = cond.attributes) {
             for (var i = 0; i < attributes.length; i++) {
-                if (attributes[i].Operator) {
-                    nativeSelector += ("[" + attributes[i].key + attributes[i].Operator + JSON.stringify(attributes[i].value) + +"]");
+                if (attributes[i].operator) {
+                    nativeSelector += ("[" + attributes[i].key + attributes[i].operator + JSON.stringify(attributes[i].value)  +"]");
                 } else {
                     nativeSelector += ("[" + attributes[i].key + "]");
                 }

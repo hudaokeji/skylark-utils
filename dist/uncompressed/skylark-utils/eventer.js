@@ -213,7 +213,7 @@ define([
                         var elm = this,
                             e = createProxy(domEvt),
                             args = domEvt._args,
-                            binding = self._bindings,
+                            bindings = self._bindings,
                             ns = e.namespace;
 
                         if (langx.isDefined(args)) {
@@ -222,10 +222,10 @@ define([
                             args = [e];
                         }
 
-                        bindings.some(function(binding) {
+                        langx.each(bindings,function(idx,binding) {
                             var match = elm;
                             if (e.isImmediatePropagationStopped && e.isImmediatePropagationStopped()) {
-                                return true;
+                                return false;
                             }
                             var fn = binding.fn,
                                 options = binding.options || {},
@@ -234,7 +234,7 @@ define([
                                 data = options.data;
 
                             if (ns && ns != options.ns) {
-                                return false;
+                                return ;
                             }
                             if (selector) {
                                 match = finder.closest(e.target, selector);
@@ -244,7 +244,7 @@ define([
                                         liveFired: elm
                                     });
                                 } else {
-                                    return false;
+                                    return ;
                                 }
                             }
 
@@ -262,7 +262,6 @@ define([
                                 e.preventDefault();
                                 e.stopPropagation();
                             }
-                            return false;
                         });;
                     };
 

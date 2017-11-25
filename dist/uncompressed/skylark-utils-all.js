@@ -1310,22 +1310,27 @@ define('skylark-utils/styler',[
     }
 
     function removeClass(elm, name) {
-        var cls = className(elm),
-            names;
-        if (langx.isString(name)) {
-            names = name.split(/\s+/g);
-        } else {
-            names = name;
-        }
+        if (name) {
+            var cls = className(elm),
+                names;
 
-        names.forEach(function(klass) {
-            var re = classRE(klass);
-            if (cls.match(re)) {
-                cls = cls.replace(re, " ");
+            if (langx.isString(name)) {
+                names = name.split(/\s+/g);
+            } else {
+                names = name;
             }
-        });
 
-        className(elm, cls.trim());
+            names.forEach(function(klass) {
+                var re = classRE(klass);
+                if (cls.match(re)) {
+                    cls = cls.replace(re, " ");
+                }
+            });
+
+            className(elm, cls.trim());
+        } else {
+            className(elm,"");
+        }
 
         return this;
     }
@@ -2230,7 +2235,7 @@ define('skylark-utils/finder',[
         },
 
         eq: function(elm, idx, nodes, value) {
-            return (idx === value);
+            return (idx == value);
         },
 
         'focus': function(elm) {
@@ -2249,6 +2254,7 @@ define('skylark-utils/finder',[
             return local.querySelector(elm, sel).length > 0;
         },
 
+
         hidden: function(elm) {
             return !local.pseudos["visible"](elm);
         },
@@ -2259,6 +2265,10 @@ define('skylark-utils/finder',[
 
         lt: function(elm, idx, nodes, value) {
             return (idx < value);
+        },
+
+        not: function(elm, idx, nodes, sel) {
+            return local.match(elm, sel);
         },
 
         parent: function(elm) {
@@ -2294,8 +2304,8 @@ define('skylark-utils/finder',[
         }
         if (attributes = cond.attributes) {
             for (var i = 0; i < attributes.length; i++) {
-                if (attributes[i].Operator) {
-                    nativeSelector += ("[" + attributes[i].key + attributes[i].Operator + JSON.stringify(attributes[i].value) + +"]");
+                if (attributes[i].operator) {
+                    nativeSelector += ("[" + attributes[i].key + attributes[i].operator + JSON.stringify(attributes[i].value)  +"]");
                 } else {
                     nativeSelector += ("[" + attributes[i].key + "]");
                 }
@@ -3680,7 +3690,7 @@ define('skylark-utils/eventer',[
                         var elm = this,
                             e = createProxy(domEvt),
                             args = domEvt._args,
-                            binding = self._bindings,
+                            bindings = self._bindings,
                             ns = e.namespace;
 
                         if (langx.isDefined(args)) {
@@ -3689,10 +3699,10 @@ define('skylark-utils/eventer',[
                             args = [e];
                         }
 
-                        bindings.some(function(binding) {
+                        langx.each(bindings,function(idx,binding) {
                             var match = elm;
                             if (e.isImmediatePropagationStopped && e.isImmediatePropagationStopped()) {
-                                return true;
+                                return false;
                             }
                             var fn = binding.fn,
                                 options = binding.options || {},
@@ -3701,7 +3711,7 @@ define('skylark-utils/eventer',[
                                 data = options.data;
 
                             if (ns && ns != options.ns) {
-                                return false;
+                                return ;
                             }
                             if (selector) {
                                 match = finder.closest(e.target, selector);
@@ -3711,7 +3721,7 @@ define('skylark-utils/eventer',[
                                         liveFired: elm
                                     });
                                 } else {
-                                    return false;
+                                    return ;
                                 }
                             }
 
@@ -3729,7 +3739,6 @@ define('skylark-utils/eventer',[
                                 e.preventDefault();
                                 e.stopPropagation();
                             }
-                            return false;
                         });;
                     };
 
