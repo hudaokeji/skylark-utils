@@ -2642,7 +2642,7 @@ define('skylark-utils/eventer',[
             type = parsed.type;
 
             props = langx.mixin({
-                bubbles: false,
+                bubbles: true,
                 cancelable: true
             }, props);
 
