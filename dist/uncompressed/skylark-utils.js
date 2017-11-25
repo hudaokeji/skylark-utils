@@ -1694,9 +1694,13 @@ define('skylark-utils/finder',[
             } catch (matchError) {
                 //console.log(matchError);
             }
-            return local.match(elm, selector)
-        } else {
+            return local.match(elm, selector);
+        } else if (langx.isArrayLike(selector)) {
+            return langx.inArray(elm,selector);
+        } else if (langx.isPlainObject(selector)){    
             return local.check(elm, selector);
+        } else {
+            return elm === selector;
         }
 
     }
