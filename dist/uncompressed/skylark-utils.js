@@ -1,7 +1,7 @@
 /**
  * skylark-utils - An Elegant HTML5 JavaScript Library.
  * @author Hudaokeji Co.,Ltd
- * @version v0.9.3-beta
+ * @version v0.9.3
  * @link www.skylarkjs.org
  * @license MIT
  */
@@ -1360,7 +1360,7 @@ define('skylark-utils/finder',[
             if (tag == '*') {
                 if (nodeName < '@') return false; // Fix for comment nodes and closed nodes
             } else {
-                if (nodeName != tag.toUpperCase()) return false;
+                if (nodeName != (tag || "").toUpperCase()) return false;
             }
         }
 
@@ -1804,7 +1804,7 @@ define('skylark-utils/finder',[
         children: children,
 
         closest: closest,
-        
+
         descendant: descendant,
 
         descendants: descendants,
@@ -1836,6 +1836,7 @@ define('skylark-utils/finder',[
 
     return skylark.finder = finder;
 });
+
 define('skylark-utils/datax',[
     "./skylark",
     "./langx",

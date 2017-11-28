@@ -381,7 +381,7 @@ define([
             if (tag == '*') {
                 if (nodeName < '@') return false; // Fix for comment nodes and closed nodes
             } else {
-                if (nodeName != tag.toUpperCase()) return false;
+                if (nodeName != (tag || "").toUpperCase()) return false;
             }
         }
 
@@ -825,7 +825,7 @@ define([
         children: children,
 
         closest: closest,
-        
+
         descendant: descendant,
 
         descendants: descendants,
