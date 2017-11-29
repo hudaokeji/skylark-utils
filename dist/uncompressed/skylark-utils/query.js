@@ -473,6 +473,8 @@ define([
 
             prop: wrapper_name_value(datax.prop, datax, datax.prop),
 
+            removeProp: wrapper_every_act(datax.removeProp, datax),
+
             data: wrapper_name_value(datax.data, datax, datax.data),
 
             removeData: wrapper_every_act(datax.removeData, datax),
