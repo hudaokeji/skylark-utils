@@ -306,7 +306,7 @@ define([
             },
 
             add: function(selector, context) {
-                return $(uniq(this.concat($(selector, context))))
+                return $(uniq(this.toArray().concat($(selector, context).toArray())));
             },
 
             is: function(selector) {
