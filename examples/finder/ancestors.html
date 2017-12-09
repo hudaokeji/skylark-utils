@@ -35,7 +35,7 @@
     <input name="none" />
     <script>
     require(["skylark-utils/finder", "skylark-utils/styler"], function(finder, styler) {
-        finder.ancestors(finder.find("input "), "form").forEach(function(node, index) {
+        finder.ancestors(finder.find("input"), "form:last").forEach(function(node, index) {
             styler.css(node, "border", "2px dotted blue");
         });
     });
