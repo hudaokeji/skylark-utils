@@ -738,12 +738,24 @@ define([
         }
     }
 
-    function find(selector) {
-        return descendant(document.body, selector);
+    function find(elm,selector) {
+        if (!selector) {
+            selector = elm;
+            elm = document.body;
+        }
+        if (matches(elm,selector)) {
+            return elm;
+        } else {
+            return descendant(elm, selector);
+        }
     }
 
-    function findAll(selector) {
-        return descendants(document.body, selector);
+    function findAll(elm,selector) {
+        if (!selector) {
+            selector = elm;
+            elm = document.body;
+        }
+        return descendants(elm, selector);
     }
 
     function firstChild(elm, selector, first) {
