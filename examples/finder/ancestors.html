@@ -29,15 +29,16 @@
     <form>
         <div>Form is surrounded by the blue outline</div>
         <label>Child:</label>
-        <input name="name" />
+        <input name="name" class="inform" />
     </form>
     Sibling to form:
     <input name="none" />
     <script>
-    require(["skylark-utils/finder", "skylark-utils/styler"], function(finder, styler) {
+    require(["skylark-utils/finder", "skylark-utils/styler","skylark-utils/query"], function(finder, styler,$) {
         finder.ancestors(finder.find("input"), "form:last").forEach(function(node, index) {
             styler.css(node, "border", "2px dotted blue");
         });
+        $("input.inform").parent().css("border-width","3px");
     });
     </script>
 </body>
