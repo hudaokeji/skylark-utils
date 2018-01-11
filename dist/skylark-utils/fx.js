@@ -1,9 +1,303 @@
-/**
- * skylark-utils - An Elegant HTML5 JavaScript Library.
- * @author Hudaokeji Co.,Ltd
- * @version v0.9.5-beta
- * @link www.skylarkjs.org
- * @license MIT
- */
-define(["./skylark","./langx","./browser","./styler","./eventer"],function(n,i,t,e,s){function o(n,t,o,r,a,l){var u,f,p,d={},v=[],j="",E=this,O=!1,F=!1;if(i.isPlainObject(o)&&(r=o.easing,a=o.complete,l=o.delay,o=o.duration),i.isString(o)&&(o=m.speeds[o]),void 0===o&&(o=m.speeds.normal),o/=1e3,m.off&&(o=0),i.isFunction(r)?(a=r,eace="swing"):r=r||"swing",l?l/=1e3:l=0,i.isString(t))d[h]=t,d[g]=o+"s",d[y]=r,f=T;else{for(u in t)I.test(u)?j+=u+"("+t[u]+") ":("scrollTop"===u&&(F=!0),d[u]=t[u],v.push(i.dasherize(u)));f=w}return j&&(d[k]=j,v.push(k)),o>0&&i.isPlainObject(t)&&(d[P]=v.join(", "),d[b]=o+"s",d[C]=l+"s",d[z]=r),p=function(i){if(O=!0,i){if(i.target!==i.currentTarget)return;s.off(i.target,f,p)}else s.off(n,T,p);e.css(n,x),a&&a.call(this)},o>0&&(s.on(n,f,p),i.debounce(function(){O||p.call(E)},1e3*(o+l)+25)()),n.clientLeft,e.css(n,d),o<=0&&i.debounce(function(){O||p.call(E)},0)(),F&&c(n,t.scrollTop,o,a),this}function r(n,t,s){return e.show(n),t&&(!s&&i.isFunction(t)&&(s=t,t="normal"),e.css(n,"opacity",0),o(n,{opacity:1,scale:"1,1"},t,s)),this}function a(n,t,s){return t?(!s&&i.isFunction(t)&&(s=t,t="normal"),o(n,{opacity:0,scale:"0,0"},t,function(){e.hide(n),s&&s.call(n)})):e.hide(n),this}function c(n,t,e,s){var o=parseInt(n.scrollTop),r=0,a=5,c=1e3*e/a,l=parseInt(t),u=setInterval(function(){r++,r<=c&&(n.scrollTop=(l-o)/c*r+o),r>=c+1&&(clearInterval(u),s&&i.debounce(s,1e3)())},a)}function l(n,i,t){return e.isInvisible(n)?r(n,i,t):a(n,i,t),this}function u(n,i,t,e,s){return o(n,{opacity:t},i,e,s),this}function f(n,i,t,s){var o=e.css(n,"opacity");return o>0?e.css(n,"opacity",0):o=1,e.show(n),u(n,i,o,t,s),this}function p(n,t,s,o){var r,a={};return i.isPlainObject(t)?(a.easing=t.easing,a.duration=t.duration,r=t.complete):(a.duration=t,o?(r=o,a.easing=s):r=s),a.complete=function(){e.hide(this),r&&r.call(this)},u(n,a,0),this}function d(n,i,t,s){return e.isInvisible(n)?f(n,i,easing,callback):p(n,i,easing,callback),this}function m(){return m}var h,g,y,v,P,b,z,C,T=t.normalizeCssEvent("AnimationEnd"),w=t.normalizeCssEvent("TransitionEnd"),I=/^((translate|rotate|scale)(X|Y|Z|3d)?|matrix(3d)?|perspective|skew(X|Y)?)$/i,k=t.css3PropPrefix+"transform",x={};return x[h=t.normalizeCssProperty("animation-name")]=x[g=t.normalizeCssProperty("animation-duration")]=x[v=t.normalizeCssProperty("animation-delay")]=x[y=t.normalizeCssProperty("animation-timing-function")]="",x[P=t.normalizeCssProperty("transition-property")]=x[b=t.normalizeCssProperty("transition-duration")]=x[C=t.normalizeCssProperty("transition-delay")]=x[z=t.normalizeCssProperty("transition-timing-function")]="",i.mixin(m,{off:!1,speeds:{normal:400,fast:200,slow:600},animate:o,fadeIn:f,fadeOut:p,fadeTo:u,fadeToggle:d,hide:a,scrollToTop:c,show:r,toggle:l}),n.fx=m});
-//# sourceMappingURL=sourcemaps/fx.js.map
+﻿define([
+    "./skylark",
+    "./langx",
+    "./browser",
+    "./styler",
+    "./eventer"
+], function(skylark, langx, browser, styler, eventer) {
+    var animationName,
+        animationDuration,
+        animationTiming,
+        animationDelay,
+        transitionProperty,
+        transitionDuration,
+        transitionTiming,
+        transitionDelay,
+
+        animationEnd = browser.normalizeCssEvent('AnimationEnd'),
+        transitionEnd = browser.normalizeCssEvent('TransitionEnd'),
+
+        supportedTransforms = /^((translate|rotate|scale)(X|Y|Z|3d)?|matrix(3d)?|perspective|skew(X|Y)?)$/i,
+        transform = browser.css3PropPrefix + "transform",
+        cssReset = {};
+
+
+    cssReset[animationName = browser.normalizeCssProperty("animation-name")] =
+        cssReset[animationDuration = browser.normalizeCssProperty("animation-duration")] =
+        cssReset[animationDelay = browser.normalizeCssProperty("animation-delay")] =
+        cssReset[animationTiming = browser.normalizeCssProperty("animation-timing-function")] = "";
+
+    cssReset[transitionProperty = browser.normalizeCssProperty("transition-property")] =
+        cssReset[transitionDuration = browser.normalizeCssProperty("transition-duration")] =
+        cssReset[transitionDelay = browser.normalizeCssProperty("transition-delay")] =
+        cssReset[transitionTiming = browser.normalizeCssProperty("transition-timing-function")] = "";
+
+
+
+    function animate(elm, properties, duration, ease, callback, delay) {
+        var key,
+            cssValues = {},
+            cssProperties = [],
+            transforms = "",
+            that = this,
+            endEvent,
+            wrappedCallback,
+            fired = false,
+            hasScrollTop = false;
+
+        if (langx.isPlainObject(duration)) {
+            ease = duration.easing;
+            callback = duration.complete;
+            delay = duration.delay;
+            duration = duration.duration;
+        }
+
+        if (langx.isString(duration)) {
+            duration = fx.speeds[duration];
+        }
+        if (duration === undefined) {
+            duration = fx.speeds.normal;
+        }
+        duration = duration / 1000;
+        if (fx.off) {
+            duration = 0;
+        }
+
+        if (langx.isFunction(ease)) {
+            callback = ease;
+            eace = "swing";
+        } else {
+            ease = ease || "swing";
+        }
+
+        if (delay) {
+            delay = delay / 1000;
+        } else {
+            delay = 0;
+        }
+
+        if (langx.isString(properties)) {
+            // keyframe animation
+            cssValues[animationName] = properties;
+            cssValues[animationDuration] = duration + "s";
+            cssValues[animationTiming] = ease;
+            endEvent = animationEnd;
+        } else {
+            // CSS transitions
+            for (key in properties) {
+                if (supportedTransforms.test(key)) {
+                    transforms += key + "(" + properties[key] + ") ";
+                } else {
+                    if (key === "scrollTop") {
+                        hasScrollTop = true;
+                    }
+                    cssValues[key] = properties[key];
+                    cssProperties.push(langx.dasherize(key));
+                }
+            }
+            endEvent = transitionEnd;
+        }
+
+        if (transforms) {
+            cssValues[transform] = transforms;
+            cssProperties.push(transform);
+        }
+
+        if (duration > 0 && langx.isPlainObject(properties)) {
+            cssValues[transitionProperty] = cssProperties.join(", ");
+            cssValues[transitionDuration] = duration + "s";
+            cssValues[transitionDelay] = delay + "s";
+            cssValues[transitionTiming] = ease;
+        }
+
+        wrappedCallback = function(event) {
+            fired = true;
+            if (event) {
+                if (event.target !== event.currentTarget) {
+                    return // makes sure the event didn't bubble from "below"
+                }
+                eventer.off(event.target, endEvent, wrappedCallback)
+            } else {
+                eventer.off(elm, animationEnd, wrappedCallback) // triggered by setTimeout
+            }
+            styler.css(elm, cssReset);
+            callback && callback.call(this);
+        };
+
+        if (duration > 0) {
+            eventer.on(elm, endEvent, wrappedCallback);
+            // transitionEnd is not always firing on older Android phones
+            // so make sure it gets fired
+            langx.debounce(function() {
+                if (fired) {
+                    return;
+                }
+                wrappedCallback.call(that);
+            }, ((duration + delay) * 1000) + 25)();
+        }
+
+        // trigger page reflow so new elements can animate
+        elm.clientLeft;
+
+        styler.css(elm, cssValues);
+
+        if (duration <= 0) {
+            langx.debounce(function() {
+                if (fired) {
+                    return;
+                }
+                wrappedCallback.call(that);
+            }, 0)();
+        }
+
+        if (hasScrollTop) {
+            scrollToTop(elm, properties["scrollTop"], duration, callback);
+        }
+
+        return this;
+    }
+
+    function show(elm, speed, callback) {
+        styler.show(elm);
+        if (speed) {
+            if (!callback && langx.isFunction(speed)) {
+                callback = speed;
+                speed = "normal";
+            }
+            styler.css(elm, "opacity", 0)
+            animate(elm, { opacity: 1, scale: "1,1" }, speed, callback);
+        }
+        return this;
+    }
+
+
+    function hide(elm, speed, callback) {
+        if (speed) {
+            if (!callback && langx.isFunction(speed)) {
+                callback = speed;
+                speed = "normal";
+            }
+            animate(elm, { opacity: 0, scale: "0,0" }, speed, function() {
+                styler.hide(elm);
+                if (callback) {
+                    callback.call(elm);
+                }
+            });
+        } else {
+            styler.hide(elm);
+        }
+        return this;
+    }
+
+    function scrollToTop(elm, pos, speed, callback) {
+        var scrollFrom = parseInt(elm.scrollTop),
+            i = 0,
+            runEvery = 5, // run every 5ms
+            freq = speed * 1000 / runEvery,
+            scrollTo = parseInt(pos);
+
+        var interval = setInterval(function() {
+            i++;
+
+            if (i <= freq) elm.scrollTop = (scrollTo - scrollFrom) / freq * i + scrollFrom;
+
+            if (i >= freq + 1) {
+                clearInterval(interval);
+                if (callback) langx.debounce(callback, 1000)();
+            }
+        }, runEvery);
+    }
+
+    function toggle(elm, speed, callback) {
+        if (styler.isInvisible(elm)) {
+            show(elm, speed, callback);
+        } else {
+            hide(elm, speed, callback);
+        }
+        return this;
+    }
+
+    function fadeTo(elm, speed, opacity, easing, callback) {
+        animate(elm, { opacity: opacity }, speed, easing, callback);
+        return this;
+    }
+
+    function fadeIn(elm, speed, easing, callback) {
+        var target = styler.css(elm, "opacity");
+        if (target > 0) {
+            styler.css(elm, "opacity", 0);
+        } else {
+            target = 1;
+        }
+        styler.show(elm);
+
+        fadeTo(elm, speed, target, easing, callback);
+
+        return this;
+    }
+
+    function fadeOut(elm, speed, easing, callback) {
+        var _elm = elm,
+            complete,
+            options = {};
+
+        if (langx.isPlainObject(speed)) {
+            options.easing = speed.easing;
+            options.duration = speed.duration;
+            complete = speed.complete;
+        } else {
+            options.duration = speed;
+            if (callback) {
+                complete = callback;
+                options.easing = easing;
+            } else {
+                complete = easing;
+            }
+        }
+        options.complete = function() {
+            styler.hide(elm);
+            if (complete) {
+                complete.call(elm);
+            }
+        }
+
+        fadeTo(elm, options, 0);
+
+        return this;
+    }
+
+    function fadeToggle(elm, speed, ceasing, allback) {
+        if (styler.isInvisible(elm)) {
+            fadeIn(elm, speed, easing, callback);
+        } else {
+            fadeOut(elm, speed, easing, callback);
+        }
+        return this;
+    }
+
+    function fx() {
+        return fx;
+    }
+
+    langx.mixin(fx, {
+        off: false,
+
+        speeds: {
+            normal: 400,
+            fast: 200,
+            slow: 600
+        },
+
+        animate: animate,
+        fadeIn: fadeIn,
+        fadeOut: fadeOut,
+        fadeTo: fadeTo,
+        fadeToggle: fadeToggle,
+        hide: hide,
+        scrollToTop: scrollToTop,
+        show: show,
+        toggle: toggle
+    });
+
+    return skylark.fx = fx;
+});
