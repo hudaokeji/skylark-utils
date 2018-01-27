@@ -693,6 +693,10 @@ define([
         $.fn.fadeIn = wrapper_every_act(fx.fadeIn, fx);
         $.fn.fadeOut = wrapper_every_act(fx.fadeOut, fx);
         $.fn.fadeToggle = wrapper_every_act(fx.fadeToggle, fx);
+
+        $.fn.slideDown = wrapper_every_act(fx.slideDown, fx);
+        $.fn.slideToggle = wrapper_every_act(fx.slideToggle, fx);
+        $.fn.slideUp = wrapper_every_act(fx.slideUp, fx);
     })(query);
 
 
@@ -703,6 +707,18 @@ define([
 
         $.fn.andSelf = function() {
             return this.add(this.prevObject || $())
+        }
+
+        $.fn.addBack = function(selector) {
+            if (this.prevObject) {
+                if (selector) {
+                    return this.add(this.prevObject.filter(selector));
+                } else {
+                    return this.add(this.prevObject);
+                }
+            } else {
+                return this;
+            }
         }
 
         'filter,add,not,eq,first,last,find,closest,parents,parent,children,siblings'.split(',').forEach(function(property) {

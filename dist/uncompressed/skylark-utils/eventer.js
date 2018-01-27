@@ -475,7 +475,12 @@ define([
         }
         e._args = args;
 
-        (evented.dispatchEvent || evented.trigger).call(evented, e);
+        var fn = (evented.dispatchEvent || evented.trigger);
+        if (fn) {
+            fn.call(evented, e);
+        } else {
+            console.warn("The evented parameter is not a eventable object");
+        }
 
         return this;
     }
