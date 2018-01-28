@@ -238,7 +238,14 @@ define([
                 push.apply(self, nodes);
 
                 if (props) {
-                    self.attr(props);
+                    for ( var name  in props ) {
+                        // Properties of context are called as methods if possible
+                        if ( langx.isFunction( this[ name ] ) ) {
+                            this[ name ]( props[ name ] );
+                        } else {
+                            this.attr( name, props[ name ] );
+                        }
+                    }
                 }
             }
 

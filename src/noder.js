@@ -255,8 +255,12 @@ define([
 
     function remove(node) {
         if (node && node.parentNode) {
-            node.parentNode.removeChild(node);
-        }
+            try {
+               node.parentNode.removeChild(node);
+            } catch (e) {
+                console.warn("The node is already removed",e);
+            }
+         }
         return this;
     }
 

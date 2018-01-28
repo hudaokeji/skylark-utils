@@ -233,7 +233,7 @@ define([
                                 one = options.one,
                                 data = options.data;
 
-                            if (ns && ns != options.ns) {
+                            if (ns && ns != options.ns && options.ns.indexOf(ns)===-1) {
                                 return ;
                             }
                             if (selector) {

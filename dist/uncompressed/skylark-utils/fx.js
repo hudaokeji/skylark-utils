@@ -388,7 +388,7 @@ define([
     };
     
     /* SlideToggle */
-    function slideToggle(elm,duration,callack) {
+    function slideToggle(elm,duration,callback) {
     
         // if the element is hidden, slideDown !
         if (geom.height(elm) == 0) {

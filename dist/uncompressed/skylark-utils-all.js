@@ -776,17 +776,17 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         var i;
 
         if (array.indexOf) {
-            return array.indexOf(item) > -1;
+            return array.indexOf(item);
         }
 
         i = array.length;
         while (i--) {
             if (array[i] === item) {
-                return true;
+                return i;
             }
         }
 
-        return false;
+        return -1;
     }
 
     function inherit(ctor, base) {
@@ -1755,8 +1755,12 @@ define('skylark-utils/noder',[
 
     function remove(node) {
         if (node && node.parentNode) {
-            node.parentNode.removeChild(node);
-        }
+            try {
+               node.parentNode.removeChild(node);
+            } catch (e) {
+                console.warn("The node is already removed",e);
+            }
+         }
         return this;
     }
 
@@ -2387,7 +2391,7 @@ define('skylark-utils/finder',[
         },
 
         'has': function(elm, idx, nodes, sel) {
-            return local.querySelector(elm, sel).length > 0;
+            return matches(elm, sel);
         },
 
 
@@ -2404,7 +2408,7 @@ define('skylark-utils/finder',[
         },
 
         'not': function(elm, idx, nodes, sel) {
-            return local.match(elm, sel);
+            return !matches(elm, sel);
         },
 
         'parent': function(elm) {
@@ -2914,7 +2918,7 @@ define('skylark-utils/finder',[
             }
             return local.match(elm, selector);
         } else if (langx.isArrayLike(selector)) {
-            return langx.inArray(elm,selector);
+            return langx.inArray(elm,selector) > -1;
         } else if (langx.isPlainObject(selector)){    
             return local.check(elm, selector);
         } else {
@@ -3639,11 +3643,11 @@ define('skylark-utils/geom',[
                 var pex = paddingExtents(elm),
                     bex = borderExtents(elm);
 
-                if (props.width !== undefined) {
+                if (props.width !== undefined && props.width !== "" && props.width !== null) {
                     props.width = props.width - pex.left - pex.right - bex.left - bex.right;
                 }
 
-                if (props.height !== undefined) {
+                if (props.height !== undefined && props.height !== "" && props.height !== null) {
                     props.height = props.height - pex.top - pex.bottom - bex.top - bex.bottom;
                 }
             }
@@ -3951,7 +3955,7 @@ define('skylark-utils/eventer',[
                                 one = options.one,
                                 data = options.data;
 
-                            if (ns && ns != options.ns) {
+                            if (ns && ns != options.ns && options.ns.indexOf(ns)===-1) {
                                 return ;
                             }
                             if (selector) {
@@ -5502,7 +5506,7 @@ define('skylark-utils/fx',[
     };
     
     /* SlideToggle */
-    function slideToggle(elm,duration,callack) {
+    function slideToggle(elm,duration,callback) {
     
         // if the element is hidden, slideDown !
         if (geom.height(elm) == 0) {
@@ -6534,7 +6538,14 @@ define('skylark-utils/query',[
                 push.apply(self, nodes);
 
                 if (props) {
-                    self.attr(props);
+                    for ( var name  in props ) {
+                        // Properties of context are called as methods if possible
+                        if ( langx.isFunction( this[ name ] ) ) {
+                            this[ name ]( props[ name ] );
+                        } else {
+                            this.attr( name, props[ name ] );
+                        }
+                    }
                 }
             }
 
