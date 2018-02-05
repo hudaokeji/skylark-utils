@@ -145,8 +145,8 @@ define([
             if (langx.isString(type)) {
                 props = props || {};
             } else {
-                props = type;
-                type = props.type;
+                props = type || {};
+                type = props.type || "";
             }
             var parsed = parse(type);
             type = parsed.type;
