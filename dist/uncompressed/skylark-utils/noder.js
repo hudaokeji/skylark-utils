@@ -93,7 +93,9 @@ define([
     function createElement(tag, props,parent) {
         var node = document.createElement(tag);
         if (props) {
-            langx.mixin(node, props);
+            for (var name in props) {
+                node.setAttribute(name, props[name]);
+            }
         }
         if (parent) {
             append(parent,node);
