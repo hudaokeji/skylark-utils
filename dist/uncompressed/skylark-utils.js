@@ -1412,12 +1412,11 @@ define('skylark-utils/finder',[
                 }
             }
 
-            if (attributes) {
-                for (i = attributes.length; i--;) {
+            if (attributes = cond.attributes) {
+                 for (i = attributes.length; i--;) {
                     part = attributes[i];
                     if (part.operator ? !part.test(node.getAttribute(part.key)) : !node.hasAttribute(part.key)) return false;
                 }
-
             }
 
         }
@@ -1664,8 +1663,8 @@ define('skylark-utils/finder',[
     function ancestors(node, selector,root) {
         var ret = [],
             rootIsSelector = root && langx.isString(root);
-        while (node = node.parentNode) {
-                ret.push(node);
+        while ((node = node.parentNode) && (node.nodeType !== 9)) {
+            ret.push(node);
             if (root) {
                 if (rootIsSelector) {
                     if (matches(node,root)) {
