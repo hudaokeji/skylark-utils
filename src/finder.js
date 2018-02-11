@@ -284,7 +284,7 @@ define([
         },
 
         'has': function(elm, idx, nodes, sel) {
-            return matches(elm, sel);
+            return find(elm, sel);
         },
 
 

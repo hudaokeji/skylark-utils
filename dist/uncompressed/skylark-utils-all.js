@@ -2757,7 +2757,7 @@ define('skylark-utils/finder',[
         },
 
         'has': function(elm, idx, nodes, sel) {
-            return matches(elm, sel);
+            return find(elm, sel);
         },
 
 
@@ -4336,6 +4336,14 @@ define('skylark-utils/eventer',[
                                 }
                             }
 
+                            var originalEvent = self._event;
+                            if (originalEvent in hover) {
+                                var related = e.relatedTarget;
+                                if (related && (related === match || noder.contains(match, related))) {
+                                    return;
+                                }
+                            }                           
+
                             if (langx.isDefined(data)) {
                                 e.data = data;
                             }
@@ -4354,6 +4362,7 @@ define('skylark-utils/eventer',[
                     };
 
                     var event = self._event;
+/*
                     if (event in hover) {
                         var l = self._listener;
                         self._listener = function(e) {
@@ -4363,6 +4372,7 @@ define('skylark-utils/eventer',[
                             }
                         }
                     }
+*/
 
                     if (self._target.addEventListener) {
                         self._target.addEventListener(realEvent(event), self._listener, false);
@@ -4433,12 +4443,22 @@ define('skylark-utils/eventer',[
                     parsed = parse(event);
                 event = parsed.type;
 
-                var listener = events[event];
+                if (event) {
+                    var listener = events[event];
 
-                if (listener) {
-                    listener.remove(fn, langx.mixin({
-                        ns: parsed.ns
-                    }, options));
+                    if (listener) {
+                        listener.remove(fn, langx.mixin({
+                            ns: parsed.ns
+                        }, options));
+                    }
+                } else {
+                    //remove all events
+                    for (event in events) {
+                        var listener = events[event];
+                        listener.remove(fn, langx.mixin({
+                            ns: parsed.ns
+                        }, options));
+                    }
                 }
             }
         }),
