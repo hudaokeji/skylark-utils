@@ -1,5 +1,6 @@
 define([
     "./skylark",
+    "./ajax",
     "./browser",
     "./css",
     "./datax",
