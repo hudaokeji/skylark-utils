@@ -10223,7 +10223,9 @@ define('skylark-utils/widget',[
                 options = el;
                 el = null;
             }
-            this.el = el;
+            if (el) {
+            	this.el = el;
+        	}
             if (options) {
                 langx.mixin(this,options);
             }
