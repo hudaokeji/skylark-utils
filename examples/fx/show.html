@@ -25,7 +25,7 @@
     <script>
     require(["skylark-utils/query", "skylark-utils/finder", "skylark-utils/fx"], function($, finder, fx) {
         $("button").on("click", function() {
-            fx.fadeIn(finder.find("p"), "slow");
+            fx.show(finder.find("p"), "slow");
         });
     });
     </script>

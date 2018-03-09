@@ -28,7 +28,8 @@
         fx.hide(finder.find("p"));
         $("a").on("click", function(event) {
             event.preventDefault();
-            fx.hide(this);
+            //fx.hide(this,'slow');
+            $(this).hide('slow');
         });
     });
     </script>
