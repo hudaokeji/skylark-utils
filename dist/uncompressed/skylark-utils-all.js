@@ -96,7 +96,137 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         concat = Array.prototype.concat,
         indexOf = Array.prototype.indexOf,
         slice = Array.prototype.slice,
-        filter = Array.prototype.filter;
+        filter = Array.prototype.filter,
+        hasOwnProperty = Object.prototype.hasOwnProperty;
+
+
+    var  PGLISTENERS = Symbol ? Symbol() : '__pglisteners';
+
+    // An internal function for creating assigner functions.
+    function createAssigner(keysFunc, defaults) {
+        return function(obj) {
+          var length = arguments.length;
+          if (defaults) obj = Object(obj);
+          if (length < 2 || obj == null) return obj;
+          for (var index = 1; index < length; index++) {
+            var source = arguments[index],
+                keys = keysFunc(source),
+                l = keys.length;
+            for (var i = 0; i < l; i++) {
+              var key = keys[i];
+              if (!defaults || obj[key] === void 0) obj[key] = source[key];
+            }
+          }
+          return obj;
+       };
+    }
+
+    // Internal recursive comparison function for `isEqual`.
+    var eq, deepEq;
+    var SymbolProto = typeof Symbol !== 'undefined' ? Symbol.prototype : null;
+
+    eq = function(a, b, aStack, bStack) {
+        // Identical objects are equal. `0 === -0`, but they aren't identical.
+        // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
+        if (a === b) return a !== 0 || 1 / a === 1 / b;
+        // `null` or `undefined` only equal to itself (strict comparison).
+        if (a == null || b == null) return false;
+        // `NaN`s are equivalent, but non-reflexive.
+        if (a !== a) return b !== b;
+        // Exhaust primitive checks
+        var type = typeof a;
+        if (type !== 'function' && type !== 'object' && typeof b != 'object') return false;
+        return deepEq(a, b, aStack, bStack);
+    };
+
+    // Internal recursive comparison function for `isEqual`.
+    deepEq = function(a, b, aStack, bStack) {
+        // Unwrap any wrapped objects.
+        //if (a instanceof _) a = a._wrapped;
+        //if (b instanceof _) b = b._wrapped;
+        // Compare `[[Class]]` names.
+        var className = toString.call(a);
+        if (className !== toString.call(b)) return false;
+        switch (className) {
+            // Strings, numbers, regular expressions, dates, and booleans are compared by value.
+            case '[object RegExp]':
+            // RegExps are coerced to strings for comparison (Note: '' + /a/i === '/a/i')
+            case '[object String]':
+                // Primitives and their corresponding object wrappers are equivalent; thus, `"5"` is
+                // equivalent to `new String("5")`.
+                return '' + a === '' + b;
+            case '[object Number]':
+                // `NaN`s are equivalent, but non-reflexive.
+                // Object(NaN) is equivalent to NaN.
+                if (+a !== +a) return +b !== +b;
+                // An `egal` comparison is performed for other numeric values.
+                return +a === 0 ? 1 / +a === 1 / b : +a === +b;
+            case '[object Date]':
+            case '[object Boolean]':
+                // Coerce dates and booleans to numeric primitive values. Dates are compared by their
+                // millisecond representations. Note that invalid dates with millisecond representations
+                // of `NaN` are not equivalent.
+                return +a === +b;
+            case '[object Symbol]':
+                return SymbolProto.valueOf.call(a) === SymbolProto.valueOf.call(b);
+        }
+
+        var areArrays = className === '[object Array]';
+        if (!areArrays) {
+            if (typeof a != 'object' || typeof b != 'object') return false;
+            // Objects with different constructors are not equivalent, but `Object`s or `Array`s
+            // from different frames are.
+            var aCtor = a.constructor, bCtor = b.constructor;
+            if (aCtor !== bCtor && !(isFunction(aCtor) && aCtor instanceof aCtor &&
+                               isFunction(bCtor) && bCtor instanceof bCtor)
+                          && ('constructor' in a && 'constructor' in b)) {
+                return false;
+            }
+        }
+        // Assume equality for cyclic structures. The algorithm for detecting cyclic
+        // structures is adapted from ES 5.1 section 15.12.3, abstract operation `JO`.
+
+        // Initializing stack of traversed objects.
+        // It's done here since we only need them for objects and arrays comparison.
+        aStack = aStack || [];
+        bStack = bStack || [];
+        var length = aStack.length;
+        while (length--) {
+            // Linear search. Performance is inversely proportional to the number of
+            // unique nested structures.
+            if (aStack[length] === a) return bStack[length] === b;
+        }
+
+        // Add the first object to the stack of traversed objects.
+        aStack.push(a);
+        bStack.push(b);
+
+        // Recursively compare objects and arrays.
+        if (areArrays) {
+            // Compare array lengths to determine if a deep comparison is necessary.
+            length = a.length;
+            if (length !== b.length) return false;
+            // Deep compare the contents, ignoring non-numeric properties.
+            while (length--) {
+                if (!eq(a[length], b[length], aStack, bStack)) return false;
+            }
+        } else {
+            // Deep compare objects.
+            var keys = Object.keys(a), key;
+            length = keys.length;
+            // Ensure that both objects contain the same number of properties before comparing deep equality.
+            if (Object.keys(b).length !== length) return false;
+            while (length--) {
+                // Deep compare each member
+                key = keys[length];
+                if (!(b[key]!==undefined && eq(a[key], b[key], aStack, bStack))) return false;
+            }
+        }
+        // Remove the first object from the stack of traversed objects.
+        aStack.pop();
+        bStack.pop();
+        return true;
+    };
 
     var undefined, nextId = 0;
     function advise(dispatcher, type, advice, receiveArguments){
@@ -302,28 +432,12 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
     })();
 
 
-    function clone( /*anything*/ src,checkCloneMethod) {
-        var copy;
-        if (src === undefined || src === null) {
-            copy = src;
-        } else if (checkCloneMethod && src.clone) {
-            copy = src.clone();
-        } else if (isArray(src)) {
-            copy = [];
-            for (var i = 0; i < src.length; i++) {
-                copy.push(clone(src[i]));
-            }
-        } else if (isPlainObject(src)) {
-            copy = {};
-            for (var key in src) {
-                copy[key] = clone(src[key]);
-            }
-        } else {
-            copy = src;
-        }
-
-        return copy;
-
+    // Retrieve all the property names of an object.
+    function allKeys(obj) {
+        if (!isObject(obj)) return [];
+        var keys = [];
+        for (var key in obj) keys.push(key);
+        return keys;
     }
 
     function createEvent(type, props) {
@@ -359,7 +473,546 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         };
     })();
 
-    var  PGLISTENERS = Symbol ? Symbol() : '__pglisteners';
+
+    // Retrieve the values of an object's properties.
+    function values(obj) {
+        var keys = _.keys(obj);
+        var length = keys.length;
+        var values = Array(length);
+        for (var i = 0; i < length; i++) {
+            values[i] = obj[keys[i]];
+        }
+        return values;
+    }
+    
+    function clone( /*anything*/ src,checkCloneMethod) {
+        var copy;
+        if (src === undefined || src === null) {
+            copy = src;
+        } else if (checkCloneMethod && src.clone) {
+            copy = src.clone();
+        } else if (isArray(src)) {
+            copy = [];
+            for (var i = 0; i < src.length; i++) {
+                copy.push(clone(src[i]));
+            }
+        } else if (isPlainObject(src)) {
+            copy = {};
+            for (var key in src) {
+                copy[key] = clone(src[key]);
+            }
+        } else {
+            copy = src;
+        }
+
+        return copy;
+
+    }
+
+    function compact(array) {
+        return filter.call(array, function(item) {
+            return item != null;
+        });
+    }
+
+    function dasherize(str) {
+        return str.replace(/::/g, '/')
+            .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+            .replace(/([a-z\d])([A-Z])/g, '$1_$2')
+            .replace(/_/g, '-')
+            .toLowerCase();
+    }
+
+    function deserializeValue(value) {
+        try {
+            return value ?
+                value == "true" ||
+                (value == "false" ? false :
+                    value == "null" ? null :
+                    +value + "" == value ? +value :
+                    /^[\[\{]/.test(value) ? JSON.parse(value) :
+                    value) : value;
+        } catch (e) {
+            return value;
+        }
+    }
+
+    function each(obj, callback) {
+        var length, key, i, undef, value;
+
+        if (obj) {
+            length = obj.length;
+
+            if (length === undef) {
+                // Loop object items
+                for (key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        value = obj[key];
+                        if (callback.call(value, key, value) === false) {
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // Loop array items
+                for (i = 0; i < length; i++) {
+                    value = obj[i];
+                    if (callback.call(value, i, value) === false) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return this;
+    }
+
+    function flatten(array) {
+        if (isArrayLike(array)) {
+            var result = [];
+            for (var i = 0; i < array.length; i++) {
+                var item = array[i];
+                if (isArrayLike(item)) {
+                    for (var j = 0; j < item.length; j++) {
+                        result.push(item[j]);
+                    }
+                } else {
+                    result.push(item);
+                }
+            }
+            return result;
+        } else {
+            return array;
+        }
+        //return array.length > 0 ? concat.apply([], array) : array;
+    }
+
+    function funcArg(context, arg, idx, payload) {
+        return isFunction(arg) ? arg.call(context, idx, payload) : arg;
+    }
+
+    var getAbsoluteUrl = (function() {
+        var a;
+
+        return function(url) {
+            if (!a) a = document.createElement('a');
+            a.href = url;
+
+            return a.href;
+        };
+    })();
+
+    function getQueryParams(url) {
+        var url = url || window.location.href,
+            segs = url.split("?"),
+            params = {};
+
+        if (segs.length > 1) {
+            segs[1].split("&").forEach(function(queryParam) {
+                var nv = queryParam.split('=');
+                params[nv[0]] = nv[1];
+            });
+        }
+        return params;
+    }
+
+    function grep(array, callback) {
+        var out = [];
+
+        each(array, function(i, item) {
+            if (callback(item, i)) {
+                out.push(item);
+            }
+        });
+
+        return out;
+    }
+
+
+    function has(obj, path) {
+        if (!isArray(path)) {
+            return obj != null && hasOwnProperty.call(obj, path);
+        }
+        var length = path.length;
+        for (var i = 0; i < length; i++) {
+            var key = path[i];
+            if (obj == null || !hasOwnProperty.call(obj, key)) {
+                return false;
+            }
+            obj = obj[key];
+        }
+        return !!length;
+    }
+
+    function inArray(item, array) {
+        if (!array) {
+            return -1;
+        }
+        var i;
+
+        if (array.indexOf) {
+            return array.indexOf(item);
+        }
+
+        i = array.length;
+        while (i--) {
+            if (array[i] === item) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    function inherit(ctor, base) {
+        var f = function() {};
+        f.prototype = base.prototype;
+
+        ctor.prototype = new f();
+    }
+
+    function isArray(object) {
+        return object && object.constructor === Array;
+    }
+
+    function isArrayLike(obj) {
+        return !isString(obj) && !isHtmlNode(obj) && typeof obj.length == 'number';
+    }
+
+    function isBoolean(obj) {
+        return typeof(obj) === "boolean";
+    }
+
+    function isDocument(obj) {
+        return obj != null && obj.nodeType == obj.DOCUMENT_NODE;
+    }
+
+
+
+  // Perform a deep comparison to check if two objects are equal.
+    function isEqual(a, b) {
+        return eq(a, b);
+    }
+
+    function isFunction(value) {
+        return type(value) == "function";
+    }
+
+    function isObject(obj) {
+        return type(obj) == "object";
+    }
+
+    function isPlainObject(obj) {
+        return isObject(obj) && !isWindow(obj) && Object.getPrototypeOf(obj) == Object.prototype;
+    }
+
+    function isString(obj) {
+        return typeof obj === 'string';
+    }
+
+    function isWindow(obj) {
+        return obj && obj == obj.window;
+    }
+
+    function isDefined(obj) {
+        return typeof obj !== 'undefined';
+    }
+
+    function isHtmlNode(obj) {
+        return obj && (obj instanceof Node);
+    }
+
+    function isNumber(obj) {
+        return typeof obj == 'number';
+    }
+
+    function isSameOrigin(href) {
+        if (href) {
+            var origin = location.protocol + '//' + location.hostname;
+            if (location.port) {
+                origin += ':' + location.port;
+            }
+            return href.startsWith(origin);
+        }
+    }
+
+
+    function isEmptyObject(obj) {
+        var name;
+        for (name in obj) {
+            if (obj[name] !== null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Returns whether an object has a given set of `key:value` pairs.
+    function isMatch(object, attrs) {
+        var keys = keys(attrs), length = keys.length;
+        if (object == null) return !length;
+        var obj = Object(object);
+        for (var i = 0; i < length; i++) {
+          var key = keys[i];
+          if (attrs[key] !== obj[key] || !(key in obj)) return false;
+        }
+        return true;
+    }    
+
+    // Retrieve the names of an object's own properties.
+    // Delegates to **ECMAScript 5**'s native `Object.keys`.
+    function keys(obj) {
+        if (isObject(obj)) return [];
+        var keys = [];
+        for (var key in obj) if (has(obj, key)) keys.push(key);
+        return keys;
+    }
+
+    function makeArray(obj, offset, startWith) {
+       if (isArrayLike(obj) ) {
+        return (startWith || []).concat(Array.prototype.slice.call(obj, offset || 0));
+      }
+
+      // array of single index
+      return [ obj ];             
+    }
+
+    function map(elements, callback) {
+        var value, values = [],
+            i, key
+        if (isArrayLike(elements))
+            for (i = 0; i < elements.length; i++) {
+                value = callback.call(elements[i], elements[i], i);
+                if (value != null) values.push(value)
+            }
+        else
+            for (key in elements) {
+                value = callback.call(elements[key], elements[key], key);
+                if (value != null) values.push(value)
+            }
+        return flatten(values)
+    }
+
+    function defer(fn) {
+        if (requestAnimationFrame) {
+            requestAnimationFrame(fn);
+        } else {
+            setTimeoutout(fn);
+        }
+        return this;
+    }
+
+    function proxy(fn, context) {
+        var args = (2 in arguments) && slice.call(arguments, 2)
+        if (isFunction(fn)) {
+            var proxyFn = function() {
+                return fn.apply(context, args ? args.concat(slice.call(arguments)) : arguments);
+            }
+            return proxyFn;
+        } else if (isString(context)) {
+            if (args) {
+                args.unshift(fn[context], fn)
+                return proxy.apply(null, args)
+            } else {
+                return proxy(fn[context], fn);
+            }
+        } else {
+            throw new TypeError("expected function");
+        }
+    }
+
+
+    function toPixel(value) {
+        // style values can be floats, client code may want
+        // to round for integer pixels.
+        return parseFloat(value) || 0;
+    }
+
+    var type = (function() {
+        var class2type = {};
+
+        // Populate the class2type map
+        each("Boolean Number String Function Array Date RegExp Object Error".split(" "), function(i, name) {
+            class2type["[object " + name + "]"] = name.toLowerCase();
+        });
+
+        return function type(obj) {
+            return obj == null ? String(obj) :
+                class2type[toString.call(obj)] || "object";
+        };
+    })();
+
+    function trim(str) {
+        return str == null ? "" : String.prototype.trim.call(str);
+    }
+
+    function removeItem(items, item) {
+        if (isArray(items)) {
+            var idx = items.indexOf(item);
+            if (idx != -1) {
+                items.splice(idx, 1);
+            }
+        } else if (isPlainObject(items)) {
+            for (var key in items) {
+                if (items[key] == item) {
+                    delete items[key];
+                    break;
+                }
+            }
+        }
+
+        return this;
+    }
+
+    function _mixin(target, source, deep, safe) {
+        for (var key in source) {
+            if (!source.hasOwnProperty(key)) {
+                continue;
+            }
+            if (safe && target[key] !== undefined) {
+                continue;
+            }
+            if (deep && (isPlainObject(source[key]) || isArray(source[key]))) {
+                if (isPlainObject(source[key]) && !isPlainObject(target[key])) {
+                    target[key] = {};
+                }
+                if (isArray(source[key]) && !isArray(target[key])) {
+                    target[key] = [];
+                }
+                _mixin(target[key], source[key], deep, safe);
+            } else if (source[key] !== undefined) {
+                target[key] = source[key]
+            }
+        }
+        return target;
+    }
+
+    function _parseMixinArgs(args) {
+        var params = slice.call(arguments, 0);
+        target = params.shift(),
+            deep = false;
+        if (isBoolean(params[params.length - 1])) {
+            deep = params.pop();
+        }
+
+        return {
+            target: target,
+            sources: params,
+            deep: deep
+        };
+    }
+
+    function mixin() {
+        var args = _parseMixinArgs.apply(this, arguments);
+
+        args.sources.forEach(function(source) {
+            _mixin(args.target, source, args.deep, false);
+        });
+        return args.target;
+    }
+
+    function result(obj, path, fallback) {
+        if (!isArray(path)) {
+            path = [path]
+        };
+        var length = path.length;
+        if (!length) {
+          return isFunction(fallback) ? fallback.call(obj) : fallback;
+        }
+        for (var i = 0; i < length; i++) {
+          var prop = obj == null ? void 0 : obj[path[i]];
+          if (prop === void 0) {
+            prop = fallback;
+            i = length; // Ensure we don't continue iterating.
+          }
+          obj = isFunction(prop) ? prop.call(obj) : prop;
+        }
+
+        return obj;
+    }
+
+    function safeMixin() {
+        var args = _parseMixinArgs.apply(this, arguments);
+
+        args.sources.forEach(function(source) {
+            _mixin(args.target, source, args.deep, true);
+        });
+        return args.target;
+    }
+
+    function substitute( /*String*/ template,
+        /*Object|Array*/
+        map,
+        /*Function?*/
+        transform,
+        /*Object?*/
+        thisObject) {
+        // summary:
+        //    Performs parameterized substitutions on a string. Throws an
+        //    exception if any parameter is unmatched.
+        // template:
+        //    a string with expressions in the form `${key}` to be replaced or
+        //    `${key:format}` which specifies a format function. keys are case-sensitive.
+        // map:
+        //    hash to search for substitutions
+        // transform:
+        //    a function to process all parameters before substitution takes
+
+
+        thisObject = thisObject || window;
+        transform = transform ?
+            proxy(thisObject, transform) : function(v) {
+                return v;
+            };
+
+        function getObject(key, map) {
+            if (key.match(/\./)) {
+                var retVal,
+                    getValue = function(keys, obj) {
+                        var _k = keys.pop();
+                        if (_k) {
+                            if (!obj[_k]) return null;
+                            return getValue(keys, retVal = obj[_k]);
+                        } else {
+                            return retVal;
+                        }
+                    };
+                return getValue(key.split(".").reverse(), map);
+            } else {
+                return map[key];
+            }
+        }
+
+        return template.replace(/\$\{([^\s\:\}]+)(?:\:([^\s\:\}]+))?\}/g,
+            function(match, key, format) {
+                var value = getObject(key, map);
+                if (format) {
+                    value = getObject(format, thisObject).call(thisObject, value, key);
+                }
+                return transform(value, key).toString();
+            }); // String
+    }
+
+
+    var _uid = 1;
+
+    function uid(obj) {
+        return obj._uid || (obj._uid = _uid++);
+    }
+
+    function uniq(array) {
+        return filter.call(array, function(item, idx) {
+            return array.indexOf(item) == idx;
+        })
+    }
+
+    var idCounter = 0;
+    function uniqueId (prefix) {
+        var id = ++idCounter + '';
+        return prefix ? prefix + id : id;
+    }
+
+
 
     var Deferred = function() {
         var self = this,
@@ -692,556 +1345,6 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         }
     });
 
-    
-    function compact(array) {
-        return filter.call(array, function(item) {
-            return item != null;
-        });
-    }
-
-    function dasherize(str) {
-        return str.replace(/::/g, '/')
-            .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
-            .replace(/([a-z\d])([A-Z])/g, '$1_$2')
-            .replace(/_/g, '-')
-            .toLowerCase();
-    }
-
-    function deserializeValue(value) {
-        try {
-            return value ?
-                value == "true" ||
-                (value == "false" ? false :
-                    value == "null" ? null :
-                    +value + "" == value ? +value :
-                    /^[\[\{]/.test(value) ? JSON.parse(value) :
-                    value) : value;
-        } catch (e) {
-            return value;
-        }
-    }
-
-    function each(obj, callback) {
-        var length, key, i, undef, value;
-
-        if (obj) {
-            length = obj.length;
-
-            if (length === undef) {
-                // Loop object items
-                for (key in obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        value = obj[key];
-                        if (callback.call(value, key, value) === false) {
-                            break;
-                        }
-                    }
-                }
-            } else {
-                // Loop array items
-                for (i = 0; i < length; i++) {
-                    value = obj[i];
-                    if (callback.call(value, i, value) === false) {
-                        break;
-                    }
-                }
-            }
-        }
-
-        return this;
-    }
-
-    function flatten(array) {
-        if (isArrayLike(array)) {
-            var result = [];
-            for (var i = 0; i < array.length; i++) {
-                var item = array[i];
-                if (isArrayLike(item)) {
-                    for (var j = 0; j < item.length; j++) {
-                        result.push(item[j]);
-                    }
-                } else {
-                    result.push(item);
-                }
-            }
-            return result;
-        } else {
-            return array;
-        }
-        //return array.length > 0 ? concat.apply([], array) : array;
-    }
-
-    function funcArg(context, arg, idx, payload) {
-        return isFunction(arg) ? arg.call(context, idx, payload) : arg;
-    }
-
-    var getAbsoluteUrl = (function() {
-        var a;
-
-        return function(url) {
-            if (!a) a = document.createElement('a');
-            a.href = url;
-
-            return a.href;
-        };
-    })();
-
-    function getQueryParams(url) {
-        var url = url || window.location.href,
-            segs = url.split("?"),
-            params = {};
-
-        if (segs.length > 1) {
-            segs[1].split("&").forEach(function(queryParam) {
-                var nv = queryParam.split('=');
-                params[nv[0]] = nv[1];
-            });
-        }
-        return params;
-    }
-
-    function grep(array, callback) {
-        var out = [];
-
-        each(array, function(i, item) {
-            if (callback(item, i)) {
-                out.push(item);
-            }
-        });
-
-        return out;
-    }
-
-    function inArray(item, array) {
-        if (!array) {
-            return -1;
-        }
-        var i;
-
-        if (array.indexOf) {
-            return array.indexOf(item);
-        }
-
-        i = array.length;
-        while (i--) {
-            if (array[i] === item) {
-                return i;
-            }
-        }
-
-        return -1;
-    }
-
-    function inherit(ctor, base) {
-        var f = function() {};
-        f.prototype = base.prototype;
-
-        ctor.prototype = new f();
-    }
-
-    function isArray(object) {
-        return object && object.constructor === Array;
-    }
-
-    function isArrayLike(obj) {
-        return !isString(obj) && !isHtmlNode(obj) && typeof obj.length == 'number';
-    }
-
-    function isBoolean(obj) {
-        return typeof(obj) === "boolean";
-    }
-
-    function isDocument(obj) {
-        return obj != null && obj.nodeType == obj.DOCUMENT_NODE;
-    }
-
-
-  // Internal recursive comparison function for `isEqual`.
-  var eq, deepEq;
-  var SymbolProto = typeof Symbol !== 'undefined' ? Symbol.prototype : null;
-
-  eq = function(a, b, aStack, bStack) {
-    // Identical objects are equal. `0 === -0`, but they aren't identical.
-    // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
-    if (a === b) return a !== 0 || 1 / a === 1 / b;
-    // `null` or `undefined` only equal to itself (strict comparison).
-    if (a == null || b == null) return false;
-    // `NaN`s are equivalent, but non-reflexive.
-    if (a !== a) return b !== b;
-    // Exhaust primitive checks
-    var type = typeof a;
-    if (type !== 'function' && type !== 'object' && typeof b != 'object') return false;
-    return deepEq(a, b, aStack, bStack);
-  };
-
-  // Internal recursive comparison function for `isEqual`.
-  deepEq = function(a, b, aStack, bStack) {
-    // Unwrap any wrapped objects.
-    //if (a instanceof _) a = a._wrapped;
-    //if (b instanceof _) b = b._wrapped;
-    // Compare `[[Class]]` names.
-    var className = toString.call(a);
-    if (className !== toString.call(b)) return false;
-    switch (className) {
-      // Strings, numbers, regular expressions, dates, and booleans are compared by value.
-      case '[object RegExp]':
-      // RegExps are coerced to strings for comparison (Note: '' + /a/i === '/a/i')
-      case '[object String]':
-        // Primitives and their corresponding object wrappers are equivalent; thus, `"5"` is
-        // equivalent to `new String("5")`.
-        return '' + a === '' + b;
-      case '[object Number]':
-        // `NaN`s are equivalent, but non-reflexive.
-        // Object(NaN) is equivalent to NaN.
-        if (+a !== +a) return +b !== +b;
-        // An `egal` comparison is performed for other numeric values.
-        return +a === 0 ? 1 / +a === 1 / b : +a === +b;
-      case '[object Date]':
-      case '[object Boolean]':
-        // Coerce dates and booleans to numeric primitive values. Dates are compared by their
-        // millisecond representations. Note that invalid dates with millisecond representations
-        // of `NaN` are not equivalent.
-        return +a === +b;
-      case '[object Symbol]':
-        return SymbolProto.valueOf.call(a) === SymbolProto.valueOf.call(b);
-    }
-
-    var areArrays = className === '[object Array]';
-    if (!areArrays) {
-      if (typeof a != 'object' || typeof b != 'object') return false;
-
-      // Objects with different constructors are not equivalent, but `Object`s or `Array`s
-      // from different frames are.
-      var aCtor = a.constructor, bCtor = b.constructor;
-      if (aCtor !== bCtor && !(isFunction(aCtor) && aCtor instanceof aCtor &&
-                               isFunction(bCtor) && bCtor instanceof bCtor)
-                          && ('constructor' in a && 'constructor' in b)) {
-        return false;
-      }
-    }
-    // Assume equality for cyclic structures. The algorithm for detecting cyclic
-    // structures is adapted from ES 5.1 section 15.12.3, abstract operation `JO`.
-
-    // Initializing stack of traversed objects.
-    // It's done here since we only need them for objects and arrays comparison.
-    aStack = aStack || [];
-    bStack = bStack || [];
-    var length = aStack.length;
-    while (length--) {
-      // Linear search. Performance is inversely proportional to the number of
-      // unique nested structures.
-      if (aStack[length] === a) return bStack[length] === b;
-    }
-
-    // Add the first object to the stack of traversed objects.
-    aStack.push(a);
-    bStack.push(b);
-
-    // Recursively compare objects and arrays.
-    if (areArrays) {
-      // Compare array lengths to determine if a deep comparison is necessary.
-      length = a.length;
-      if (length !== b.length) return false;
-      // Deep compare the contents, ignoring non-numeric properties.
-      while (length--) {
-        if (!eq(a[length], b[length], aStack, bStack)) return false;
-      }
-    } else {
-      // Deep compare objects.
-      var keys = Object.keys(a), key;
-      length = keys.length;
-      // Ensure that both objects contain the same number of properties before comparing deep equality.
-      if (Object.keys(b).length !== length) return false;
-      while (length--) {
-        // Deep compare each member
-        key = keys[length];
-        if (!(b[key]!==undefined && eq(a[key], b[key], aStack, bStack))) return false;
-      }
-    }
-    // Remove the first object from the stack of traversed objects.
-    aStack.pop();
-    bStack.pop();
-    return true;
-  };
-
-  // Perform a deep comparison to check if two objects are equal.
-    function isEqual(a, b) {
-        return eq(a, b);
-    }
-
-    function isFunction(value) {
-        return type(value) == "function";
-    }
-
-    function isObject(obj) {
-        return type(obj) == "object";
-    }
-
-    function isPlainObject(obj) {
-        return isObject(obj) && !isWindow(obj) && Object.getPrototypeOf(obj) == Object.prototype;
-    }
-
-    function isString(obj) {
-        return typeof obj === 'string';
-    }
-
-    function isWindow(obj) {
-        return obj && obj == obj.window;
-    }
-
-    function isDefined(obj) {
-        return typeof obj !== 'undefined';
-    }
-
-    function isHtmlNode(obj) {
-        return obj && (obj instanceof Node);
-    }
-
-    function isNumber(obj) {
-        return typeof obj == 'number';
-    }
-
-    function isSameOrigin(href) {
-        if (href) {
-            var origin = location.protocol + '//' + location.hostname;
-            if (location.port) {
-                origin += ':' + location.port;
-            }
-            return href.startsWith(origin);
-        }
-    }
-
-
-    function isEmptyObject(obj) {
-        var name;
-        for (name in obj) {
-            if (obj[name] !== null) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function makeArray(obj, offset, startWith) {
-       if (isArrayLike(obj) ) {
-        return (startWith || []).concat(Array.prototype.slice.call(obj, offset || 0));
-      }
-
-      // array of single index
-      return [ obj ];             
-    }
-
-    function map(elements, callback) {
-        var value, values = [],
-            i, key
-        if (isArrayLike(elements))
-            for (i = 0; i < elements.length; i++) {
-                value = callback.call(elements[i], elements[i], i);
-                if (value != null) values.push(value)
-            }
-        else
-            for (key in elements) {
-                value = callback.call(elements[key], elements[key], key);
-                if (value != null) values.push(value)
-            }
-        return flatten(values)
-    }
-
-    function nextTick(fn) {
-        requestAnimationFrame(fn);
-        return this;
-    }
-
-    function proxy(fn, context) {
-        var args = (2 in arguments) && slice.call(arguments, 2)
-        if (isFunction(fn)) {
-            var proxyFn = function() {
-                return fn.apply(context, args ? args.concat(slice.call(arguments)) : arguments);
-            }
-            return proxyFn;
-        } else if (isString(context)) {
-            if (args) {
-                args.unshift(fn[context], fn)
-                return proxy.apply(null, args)
-            } else {
-                return proxy(fn[context], fn);
-            }
-        } else {
-            throw new TypeError("expected function");
-        }
-    }
-
-
-    function toPixel(value) {
-        // style values can be floats, client code may want
-        // to round for integer pixels.
-        return parseFloat(value) || 0;
-    }
-
-    var type = (function() {
-        var class2type = {};
-
-        // Populate the class2type map
-        each("Boolean Number String Function Array Date RegExp Object Error".split(" "), function(i, name) {
-            class2type["[object " + name + "]"] = name.toLowerCase();
-        });
-
-        return function type(obj) {
-            return obj == null ? String(obj) :
-                class2type[toString.call(obj)] || "object";
-        };
-    })();
-
-    function trim(str) {
-        return str == null ? "" : String.prototype.trim.call(str);
-    }
-
-    function removeItem(items, item) {
-        if (isArray(items)) {
-            var idx = items.indexOf(item);
-            if (idx != -1) {
-                items.splice(idx, 1);
-            }
-        } else if (isPlainObject(items)) {
-            for (var key in items) {
-                if (items[key] == item) {
-                    delete items[key];
-                    break;
-                }
-            }
-        }
-
-        return this;
-    }
-
-    function _mixin(target, source, deep, safe) {
-        for (var key in source) {
-            if (!source.hasOwnProperty(key)) {
-                continue;
-            }
-            if (safe && target[key] !== undefined) {
-                continue;
-            }
-            if (deep && (isPlainObject(source[key]) || isArray(source[key]))) {
-                if (isPlainObject(source[key]) && !isPlainObject(target[key])) {
-                    target[key] = {};
-                }
-                if (isArray(source[key]) && !isArray(target[key])) {
-                    target[key] = [];
-                }
-                _mixin(target[key], source[key], deep, safe);
-            } else if (source[key] !== undefined) {
-                target[key] = source[key]
-            }
-        }
-        return target;
-    }
-
-    function _parseMixinArgs(args) {
-        var params = slice.call(arguments, 0);
-        target = params.shift(),
-            deep = false;
-        if (isBoolean(params[params.length - 1])) {
-            deep = params.pop();
-        }
-
-        return {
-            target: target,
-            sources: params,
-            deep: deep
-        };
-    }
-
-    function mixin() {
-        var args = _parseMixinArgs.apply(this, arguments);
-
-        args.sources.forEach(function(source) {
-            _mixin(args.target, source, args.deep, false);
-        });
-        return args.target;
-    }
-
-    function result(obj, path, fallback) {
-        if (!isArray(path)) {
-            path = [path]
-        };
-        var length = path.length;
-        if (!length) {
-          return isFunction(fallback) ? fallback.call(obj) : fallback;
-        }
-        for (var i = 0; i < length; i++) {
-          var prop = obj == null ? void 0 : obj[path[i]];
-          if (prop === void 0) {
-            prop = fallback;
-            i = length; // Ensure we don't continue iterating.
-          }
-          obj = isFunction(prop) ? prop.call(obj) : prop;
-        }
-
-        return obj;
-    }
-
-    function safeMixin() {
-        var args = _parseMixinArgs.apply(this, arguments);
-
-        args.sources.forEach(function(source) {
-            _mixin(args.target, source, args.deep, true);
-        });
-        return args.target;
-    }
-
-    function substitute( /*String*/ template,
-        /*Object|Array*/
-        map,
-        /*Function?*/
-        transform,
-        /*Object?*/
-        thisObject) {
-        // summary:
-        //    Performs parameterized substitutions on a string. Throws an
-        //    exception if any parameter is unmatched.
-        // template:
-        //    a string with expressions in the form `${key}` to be replaced or
-        //    `${key:format}` which specifies a format function. keys are case-sensitive.
-        // map:
-        //    hash to search for substitutions
-        // transform:
-        //    a function to process all parameters before substitution takes
-
-
-        thisObject = thisObject || window;
-        transform = transform ?
-            proxy(thisObject, transform) : function(v) {
-                return v;
-            };
-
-        function getObject(key, map) {
-            if (key.match(/\./)) {
-                var retVal,
-                    getValue = function(keys, obj) {
-                        var _k = keys.pop();
-                        if (_k) {
-                            if (!obj[_k]) return null;
-                            return getValue(keys, retVal = obj[_k]);
-                        } else {
-                            return retVal;
-                        }
-                    };
-                return getValue(key.split(".").reverse(), map);
-            } else {
-                return map[key];
-            }
-        }
-
-        return template.replace(/\$\{([^\s\:\}]+)(?:\:([^\s\:\}]+))?\}/g,
-            function(match, key, format) {
-                var value = getObject(key, map);
-                if (format) {
-                    value = getObject(format, thisObject).call(thisObject, value, key);
-                }
-                return transform(value, key).toString();
-            }); // String
-    }
 
 
     var Stateful = Evented.inherit({
@@ -1442,30 +1545,14 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         }
     });
 
-    var _uid = 1;
-
-    function uid(obj) {
-        return obj._uid || (obj._uid = _uid++);
-    }
-
-    function uniq(array) {
-        return filter.call(array, function(item, idx) {
-            return array.indexOf(item) == idx;
-        })
-    }
-
-    var idCounter = 0;
-    function uniqueId (prefix) {
-        var id = ++idCounter + '';
-        return prefix ? prefix + id : id;
-    }
-
     function langx() {
         return langx;
     }
 
     mixin(langx, {
         after: aspect("after"),
+
+        allKeys: allKeys,
 
         around: aspect("around"),
 
@@ -1476,6 +1563,7 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
                 return a.toUpperCase().replace('-', '');
             });
         },
+
         clone: clone,
 
         compact: compact,
@@ -1486,11 +1574,15 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 
         debounce: debounce,
 
+        defaults : createAssigner(allKeys, true),
+
         delegate: delegate,
 
         Deferred: Deferred,
 
         Evented: Evented,
+
+        defer: defer,
 
         deserializeValue: deserializeValue,
 
@@ -1501,6 +1593,8 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         funcArg: funcArg,
 
         getQueryParams: getQueryParams,
+
+        has: has,
 
         inArray: inArray,
 
@@ -1524,17 +1618,21 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 
         isHtmlNode: isHtmlNode,
 
+        isMatch: isMatch,
+
+        isNumber: isNumber,
+
         isObject: isObject,
 
         isPlainObject: isPlainObject,
-
-        isNumber: isNumber,
 
         isString: isString,
 
         isSameOrigin: isSameOrigin,
 
         isWindow: isWindow,
+
+        keys: keys,
 
         klass: function(props, parent, options) {
             return createClass(props, parent, options);
@@ -1550,7 +1648,6 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 
         mixin: mixin,
 
-        nextTick: nextTick,
 
         proxy: proxy,
 
@@ -1592,7 +1689,9 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
             return str.charAt(0).toUpperCase() + str.slice(1);
         },
 
-        URL: window.URL || window.webkitURL
+        URL: typeof window !== "undefined" ? window.URL || window.webkitURL : null,
+
+        values: values
 
     });
 
@@ -7549,288 +7648,6 @@ define('skylark-utils/filer',[
     return skylark.filer = filer;
 });
 
-define('skylark-utils/http',[
-    "./skylark",
-    "./langx"
-],function(skylark, langx){
-    var Deferred = langx.Deferred,
-        blankRE = /^\s*$/,
-        scriptTypeRE = /^(?:text|application)\/javascript/i,
-        xmlTypeRE = /^(?:text|application)\/xml/i;
-
-
-    function empty() {}
-
-    var ajaxSettings = {
-        // Default type of request
-        type: 'GET',
-        // Callback that is executed before request
-        beforeSend: empty,
-        // Callback that is executed if the request succeeds
-        success: empty,
-        // Callback that is executed the the server drops error
-        error: empty,
-        // Callback that is executed on request complete (both: error and success)
-        complete: empty,
-        // The context for the callbacks
-        context: null,
-        // Whether to trigger "global" Ajax events
-        global: true,
-        // Transport
-        xhr: function() {
-            return new window.XMLHttpRequest();
-        },
-        // MIME types mapping
-        // IIS returns Javascript as "application/x-javascript"
-        accepts: {
-            script: 'text/javascript, application/javascript, application/x-javascript',
-            json: 'application/json',
-            xml: 'application/xml, text/xml',
-            html: 'text/html',
-            text: 'text/plain'
-        },
-        // Whether the request is to another domain
-        crossDomain: false,
-        // Default timeout
-        timeout: 0,
-        // Whether data should be serialized to string
-        processData: true,
-        // Whether the browser should be allowed to cache GET responses
-        cache: true
-    }
-
-    function mimeToDataType(mime) {
-        if (mime) {
-            mime = mime.split(';', 2)[0];
-        }
-        return mime && (mime == 'text/html' ? 'html' :
-            mime == 'application/json' ? 'json' :
-            scriptTypeRE.test(mime) ? 'script' :
-            xmlTypeRE.test(mime) && 'xml') || 'text';
-    }
-
-    function appendQuery(url, query) {
-        if (query == '') {
-            return url;
-        }
-        return (url + '&' + query).replace(/[&?]{1,2}/, '?');
-    }
-
-    function serialize(params, obj, traditional, scope) {
-        var type, array = langx.isArray(obj),
-            hash = langx.isPlainObject(obj)
-        langx.each(obj, function(key, value) {
-            type = langx.type(value);
-            if (scope) {
-                key = traditional ? scope :
-                        scope + '[' + (hash || type == 'object' || type == 'array' ? key : '') + ']' ;
-            }
-            // handle data in serializeArray() format
-            if (!scope && array) {
-                params.add(value.name, value.value);
-            // recurse into nested objects
-            } else if (type == "array" || (!traditional && type == "object")) {
-                serialize(params, value, traditional, key);
-            } else {
-                params.add(key, value);
-            }
-        })
-    }    
-
-    function param(obj, traditional) {
-        var params = []
-        params.add = function(key, value) {
-            if (langx.isFunction(value)) {
-                value = value();
-            }
-            if (value == null) {
-                value = "";
-            }
-            this.push(escape(key) + '=' + escape(value));
-        }
-        
-        serialize(params, obj, traditional);
-
-        return params.join('&').replace(/%20/g, '+')
-    }
-
-    // serialize payload and append it to the URL for GET requests
-    function serializeData(options) {
-        if (options.processData && options.data && !langx.isString(options.data)) {
-            options.data = $.param(options.data, options.traditional)
-        }
-        if (options.data && (!options.type || options.type.toUpperCase() == 'GET')) {
-            options.url = appendQuery(options.url, options.data);
-            options.data = undefined;
-        }
-    }
-
-    function ajaxSuccess(data, xhr, settings, deferred) {
-        var context = settings.context,
-            status = 'success'
-        settings.success.call(context, data, status, xhr)
-        //if (deferred) deferred.resolveWith(context, [data, status, xhr])
-        //triggerGlobal(settings, context, 'ajaxSuccess', [xhr, settings, data])
-        ajaxComplete(status, xhr, settings)
-    }
-    // type: "timeout", "error", "abort", "parsererror"
-    function ajaxError(error, type, xhr, settings, deferred) {
-        var context = settings.context
-        settings.error.call(context, xhr, type, error)
-        //if (deferred) deferred.rejectWith(context, [xhr, type, error])
-        //triggerGlobal(settings, context, 'ajaxError', [xhr, settings, error || type])
-        ajaxComplete(type, xhr, settings)
-    }
-    // status: "success", "notmodified", "error", "timeout", "abort", "parsererror"
-    function ajaxComplete(status, xhr, settings) {
-        var context = settings.context
-        settings.complete.call(context, xhr, status)
-        //triggerGlobal(settings, context, 'ajaxComplete', [xhr, settings])
-        //ajaxStop(settings)
-    }    
-
-    function ajax(options) {
-        var settings = langx.mixin({}, options),
-            deferred = new Deferred();
-
-        langx.safeMixin(settings,ajaxSettings);
-
-        //ajaxStart(settings)
-        if (!settings.crossDomain) {
-        //    settings.crossDomain = !langx.isSameOrigin(settings.url);
-        }
-
-        serializeData(settings);
-        var dataType = settings.dataType;
-
-        var mime = settings.accepts[dataType],
-            headers = {},
-            setHeader = function(name, value) { headers[name.toLowerCase()] = [name, value] },
-            protocol = /^([\w-]+:)\/\//.test(settings.url) ? RegExp.$1 : window.location.protocol,
-            xhr = settings.xhr(),
-            nativeSetHeader = xhr.setRequestHeader,
-            abortTimeout;
-
-        //if (deferred) deferred.promise(xhr)
-
-        if (!settings.crossDomain) {
-            setHeader('X-Requested-With', 'XMLHttpRequest');
-        }
-        setHeader('Accept', mime || '*/*')
-        if (mime = settings.mimeType || mime) {
-            if (mime.indexOf(',') > -1) mime = mime.split(',', 2)[0]
-            xhr.overrideMimeType && xhr.overrideMimeType(mime)
-        }
-        if (settings.contentType || (settings.contentType !== false && settings.data && settings.type.toUpperCase() != 'GET')) {
-            setHeader('Content-Type', settings.contentType || 'application/x-www-form-urlencoded')
-        }
-
-        if (settings.headers) {
-            for (name in settings.headers) {
-                setHeader(name, settings.headers[name]);
-            }    
-        }
-        xhr.setRequestHeader = setHeader;
-
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState == 4) {
-                xhr.onreadystatechange = empty
-                clearTimeout(abortTimeout)
-                var result, error = false
-                if ((xhr.status >= 200 && xhr.status < 300) || xhr.status == 304 || (xhr.status == 0 && protocol == 'file:')) {
-                    dataType = dataType || mimeToDataType(settings.mimeType || xhr.getResponseHeader('content-type'))
-                    result = xhr.responseText
-
-                    try {
-                        // http://perfectionkills.com/global-eval-what-are-the-options/
-                        if (dataType == 'script') {
-                            (1, eval)(result);
-                        } else if (dataType == 'xml') {
-                            result = xhr.responseXML
-                        } else if (dataType == 'json') {
-                            result = blankRE.test(result) ? null : JSON.parse(result);
-                        }
-                    } catch (e) { 
-                        error = e 
-                    }
-
-                    if (error) {
-                        ajaxError(error, 'parsererror', xhr, settings, deferred);
-                    } else {
-                        ajaxSuccess(result, xhr, settings, deferred);
-                    }
-                } else {
-                    ajaxError(xhr.statusText || null, xhr.status ? 'error' : 'abort', xhr, settings, deferred);
-                }
-            }
-        }
-
-        /*
-        if (ajaxBeforeSend(xhr, settings) === false) {
-            xhr.abort()
-            ajaxError(null, 'abort', xhr, settings, deferred)
-            return xhr
-        }
-
-        if (settings.xhrFields)
-            for (name in settings.xhrFields) xhr[name] = settings.xhrFields[name]
-        */
-        var async = 'async' in settings ? settings.async : true
-        xhr.open(settings.type, settings.url, async, settings.username, settings.password)
-
-        for (name in headers) {
-            nativeSetHeader.apply(xhr, headers[name]);
-        }
-
-        if (settings.timeout > 0) {
-            abortTimeout = setTimeout(function() {
-                xhr.onreadystatechange = empty;
-                xhr.abort();
-                ajaxError(null, 'timeout', xhr, settings, deferred);
-            }, settings.timeout);
-        }
-
-        // avoid sending empty string (#319)
-        xhr.send(settings.data ? settings.data : null)
-        return xhr;
-    }
-
-
-    function get( /* url, data, success, dataType */ ) {
-        return ajax(parseArguments.apply(null, arguments))
-    }
-
-    function post( /* url, data, success, dataType */ ) {
-        var options = parseArguments.apply(null, arguments);
-        options.type = 'POST';
-        return ajax(options);
-    }
-
-    function getJSON( /* url, data, success */ ) {
-        var options = parseArguments.apply(null, arguments);
-        options.dataType = 'json';
-        return ajax(options);
-    }    
-
-
-    function http(){
-      return http;
-    }
-
-    langx.mixin(http, {
-        ajax: ajax,
-
-        get: get,
-        
-        gtJSON: getJSON,
-
-        post: post
-
-    });
-
-    return skylark.http = http;
-});
-
 define('skylark-utils/images',[
     "./skylark",
     "./langx",
@@ -8150,6 +7967,681 @@ define('skylark-utils/images',[
     });
 
     return skylark.images = images;
+});
+
+define('skylark-utils/models',[
+    "./skylark",
+    "./langx",
+    "./ajax"
+], function(skylark,langx,ajax) {
+
+  // Map from CRUD to HTTP for our default `Backbone.sync` implementation.
+  var methodMap = {
+    'create': 'POST',
+    'update': 'PUT',
+    'patch': 'PATCH',
+    'delete': 'DELETE',
+    'read': 'GET'
+  };
+  
+
+  var sync = function(method, entity, options) {
+    var type = methodMap[method];
+
+    // Default options, unless specified.
+    langx.defaults(options || (options = {}), {
+      emulateHTTP: models.emulateHTTP,
+      emulateJSON: models.emulateJSON
+    });
+
+    // Default JSON-request options.
+    var params = {type: type, dataType: 'json'};
+
+    // Ensure that we have a URL.
+    if (!options.url) {
+      params.url = langx.result(entity, 'url') || urlError();
+    }
+
+    // Ensure that we have the appropriate request data.
+    if (options.data == null && entity && (method === 'create' || method === 'update' || method === 'patch')) {
+      params.contentType = 'application/json';
+      params.data = JSON.stringify(options.attrs || entity.toJSON(options));
+    }
+
+    // For older servers, emulate JSON by encoding the request into an HTML-form.
+    if (options.emulateJSON) {
+      params.contentType = 'application/x-www-form-urlencoded';
+      params.data = params.data ? {entity: params.data} : {};
+    }
+
+    // For older servers, emulate HTTP by mimicking the HTTP method with `_method`
+    // And an `X-HTTP-Method-Override` header.
+    if (options.emulateHTTP && (type === 'PUT' || type === 'DELETE' || type === 'PATCH')) {
+      params.type = 'POST';
+      if (options.emulateJSON) params.data._method = type;
+      var beforeSend = options.beforeSend;
+      options.beforeSend = function(xhr) {
+        xhr.setRequestHeader('X-HTTP-Method-Override', type);
+        if (beforeSend) return beforeSend.apply(this, arguments);
+      };
+    }
+
+    // Don't process data on a non-GET request.
+    if (params.type !== 'GET' && !options.emulateJSON) {
+      params.processData = false;
+    }
+
+    // Pass along `textStatus` and `errorThrown` from jQuery.
+    var error = options.error;
+    options.error = function(xhr, textStatus, errorThrown) {
+      options.textStatus = textStatus;
+      options.errorThrown = errorThrown;
+      if (error) error.call(options.context, xhr, textStatus, errorThrown);
+    };
+
+    // Make the request, allowing the user to override any Ajax options.
+    var xhr = options.xhr = ajax(langx.mixin(params, options));
+    entity.trigger('request', entity, xhr, options);
+    return xhr;
+  };
+
+
+  var Entity = langx.Stateful.inherit({
+    sync: function() {
+      return models.sync.apply(this, arguments);
+    },
+
+    // Get the HTML-escaped value of an attribute.
+    //escape: function(attr) {
+    //  return _.escape(this.get(attr));
+    //},
+
+    // Special-cased proxy to underscore's `_.matches` method.
+    matches: function(attrs) {
+      return langx.isMatch(this.attributes,attrs);
+    },
+
+    // Fetch the entity from the server, merging the response with the entity's
+    // local attributes. Any changed attributes will trigger a "change" event.
+    fetch: function(options) {
+      options = langx.mixin({parse: true}, options);
+      var entity = this;
+      var success = options.success;
+      options.success = function(resp) {
+        var serverAttrs = options.parse ? entity.parse(resp, options) : resp;
+        if (!entity.set(serverAttrs, options)) return false;
+        if (success) success.call(options.context, entity, resp, options);
+        entity.trigger('sync', entity, resp, options);
+      };
+      wrapError(this, options);
+      return this.sync('read', this, options);
+    },
+
+    // Set a hash of entity attributes, and sync the entity to the server.
+    // If the server returns an attributes hash that differs, the entity's
+    // state will be `set` again.
+    save: function(key, val, options) {
+      // Handle both `"key", value` and `{key: value}` -style arguments.
+      var attrs;
+      if (key == null || typeof key === 'object') {
+        attrs = key;
+        options = val;
+      } else {
+        (attrs = {})[key] = val;
+      }
+
+      options = langx.mixin({validate: true, parse: true}, options);
+      var wait = options.wait;
+
+      // If we're not waiting and attributes exist, save acts as
+      // `set(attr).save(null, opts)` with validation. Otherwise, check if
+      // the entity will be valid when the attributes, if any, are set.
+      if (attrs && !wait) {
+        if (!this.set(attrs, options)) return false;
+      } else if (!this._validate(attrs, options)) {
+        return false;
+      }
+
+      // After a successful server-side save, the client is (optionally)
+      // updated with the server-side state.
+      var entity = this;
+      var success = options.success;
+      var attributes = this.attributes;
+      options.success = function(resp) {
+        // Ensure attributes are restored during synchronous saves.
+        entity.attributes = attributes;
+        var serverAttrs = options.parse ? entity.parse(resp, options) : resp;
+        if (wait) serverAttrs = langx.mixin({}, attrs, serverAttrs);
+        if (serverAttrs && !entity.set(serverAttrs, options)) return false;
+        if (success) success.call(options.context, entity, resp, options);
+        entity.trigger('sync', entity, resp, options);
+      };
+      wrapError(this, options);
+
+      // Set temporary attributes if `{wait: true}` to properly find new ids.
+      if (attrs && wait) this.attributes = langx.mixin({}, attributes, attrs);
+
+      var method = this.isNew() ? 'create' : (options.patch ? 'patch' : 'update');
+      if (method === 'patch' && !options.attrs) options.attrs = attrs;
+      var xhr = this.sync(method, this, options);
+
+      // Restore attributes.
+      this.attributes = attributes;
+
+      return xhr;
+    },
+
+    // Destroy this entity on the server if it was already persisted.
+    // Optimistically removes the entity from its collection, if it has one.
+    // If `wait: true` is passed, waits for the server to respond before removal.
+    destroy: function(options) {
+      options = options ? langx.clone(options) : {};
+      var entity = this;
+      var success = options.success;
+      var wait = options.wait;
+
+      var destroy = function() {
+        entity.stopListening();
+        entity.trigger('destroy', entity, entity.collection, options);
+      };
+
+      options.success = function(resp) {
+        if (wait) destroy();
+        if (success) success.call(options.context, entity, resp, options);
+        if (!entity.isNew()) entity.trigger('sync', entity, resp, options);
+      };
+
+      var xhr = false;
+      if (this.isNew()) {
+        langx.defer(options.success);
+      } else {
+        wrapError(this, options);
+        xhr = this.sync('delete', this, options);
+      }
+      if (!wait) destroy();
+      return xhr;
+    },
+
+    // Default URL for the entity's representation on the server -- if you're
+    // using Backbone's restful methods, override this to change the endpoint
+    // that will be called.
+    url: function() {
+      var base =
+        langx.result(this, 'urlRoot') ||
+        langx.result(this.collection, 'url') ||
+        urlError();
+      if (this.isNew()) return base;
+      var id = this.get(this.idAttribute);
+      return base.replace(/[^\/]$/, '$&/') + encodeURIComponent(id);
+    },
+
+    // **parse** converts a response into the hash of attributes to be `set` on
+    // the entity. The default implementation is just to pass the response along.
+    parse: function(resp, options) {
+      return resp;
+    }
+  });
+
+  var Collection  = langx.Evented.inherit({
+    "init" : function(entities, options) {
+      options || (options = {});
+      if (options.entity) this.entity = options.entity;
+      if (options.comparator !== void 0) this.comparator = options.comparator;
+      this._reset();
+      if (entities) this.reset(entities, langx.mixin({silent: true}, options));
+    }
+  }); 
+
+  // Default options for `Collection#set`.
+  var setOptions = {add: true, remove: true, merge: true};
+  var addOptions = {add: true, remove: false};
+
+  // Splices `insert` into `array` at index `at`.
+  var splice = function(array, insert, at) {
+    at = Math.min(Math.max(at, 0), array.length);
+    var tail = Array(array.length - at);
+    var length = insert.length;
+    var i;
+    for (i = 0; i < tail.length; i++) tail[i] = array[i + at];
+    for (i = 0; i < length; i++) array[i + at] = insert[i];
+    for (i = 0; i < tail.length; i++) array[i + length + at] = tail[i];
+  };
+
+  // Define the Collection's inheritable methods.
+  Collection.partial({
+
+    // The default entity for a collection is just a **Entity**.
+    // This should be overridden in most cases.
+    entity: Entity,
+
+    // Initialize is an empty function by default. Override it with your own
+    // initialization logic.
+    initialize: function(){},
+
+    // The JSON representation of a Collection is an array of the
+    // entities' attributes.
+    toJSON: function(options) {
+      return this.map(function(entity) { return entity.toJSON(options); });
+    },
+
+    // Proxy `models.sync` by default.
+    sync: function() {
+      return models.sync.apply(this, arguments);
+    },
+
+    // Add a entity, or list of entities to the set. `entities` may be Backbone
+    // Entitys or raw JavaScript objects to be converted to Entitys, or any
+    // combination of the two.
+    add: function(entities, options) {
+      return this.set(entities, langx.mixin({merge: false}, options, addOptions));
+    },
+
+    // Remove a entity, or a list of entities from the set.
+    remove: function(entities, options) {
+      options = langx.mixin({}, options);
+      var singular = !langx.isArray(entities);
+      entities = singular ? [entities] : entities.slice();
+      var removed = this._removeEntitys(entities, options);
+      if (!options.silent && removed.length) {
+        options.changes = {added: [], merged: [], removed: removed};
+        this.trigger('update', this, options);
+      }
+      return singular ? removed[0] : removed;
+    },
+
+    // Update a collection by `set`-ing a new list of entities, adding new ones,
+    // removing entities that are no longer present, and merging entities that
+    // already exist in the collection, as necessary. Similar to **Entity#set**,
+    // the core operation for updating the data contained by the collection.
+    set: function(entities, options) {
+      if (entities == null) return;
+
+      options = langx.mixin({}, setOptions, options);
+      if (options.parse && !this._isEntity(entities)) {
+        entities = this.parse(entities, options) || [];
+      }
+
+      var singular = !langx.isArray(entities);
+      entities = singular ? [entities] : entities.slice();
+
+      var at = options.at;
+      if (at != null) at = +at;
+      if (at > this.length) at = this.length;
+      if (at < 0) at += this.length + 1;
+
+      var set = [];
+      var toAdd = [];
+      var toMerge = [];
+      var toRemove = [];
+      var modelMap = {};
+
+      var add = options.add;
+      var merge = options.merge;
+      var remove = options.remove;
+
+      var sort = false;
+      var sortable = this.comparator && at == null && options.sort !== false;
+      var sortAttr = langx.isString(this.comparator) ? this.comparator : null;
+
+      // Turn bare objects into entity references, and prevent invalid entities
+      // from being added.
+      var entity, i;
+      for (i = 0; i < entities.length; i++) {
+        entity = entities[i];
+
+        // If a duplicate is found, prevent it from being added and
+        // optionally merge it into the existing entity.
+        var existing = this.get(entity);
+        if (existing) {
+          if (merge && entity !== existing) {
+            var attrs = this._isEntity(entity) ? entity.attributes : entity;
+            if (options.parse) attrs = existing.parse(attrs, options);
+            existing.set(attrs, options);
+            toMerge.push(existing);
+            if (sortable && !sort) sort = existing.hasChanged(sortAttr);
+          }
+          if (!modelMap[existing.cid]) {
+            modelMap[existing.cid] = true;
+            set.push(existing);
+          }
+          entities[i] = existing;
+
+        // If this is a new, valid entity, push it to the `toAdd` list.
+        } else if (add) {
+          entity = entities[i] = this._prepareEntity(entity, options);
+          if (entity) {
+            toAdd.push(entity);
+            this._addReference(entity, options);
+            modelMap[entity.cid] = true;
+            set.push(entity);
+          }
+        }
+      }
+
+      // Remove stale entities.
+      if (remove) {
+        for (i = 0; i < this.length; i++) {
+          entity = this.entities[i];
+          if (!modelMap[entity.cid]) toRemove.push(entity);
+        }
+        if (toRemove.length) this._removeEntitys(toRemove, options);
+      }
+
+      // See if sorting is needed, update `length` and splice in new entities.
+      var orderChanged = false;
+      var replace = !sortable && add && remove;
+      if (set.length && replace) {
+        orderChanged = this.length !== set.length || this.entities.some(function(m, index) {
+          return m !== set[index];
+        });
+        this.entities.length = 0;
+        splice(this.entities, set, 0);
+        this.length = this.entities.length;
+      } else if (toAdd.length) {
+        if (sortable) sort = true;
+        splice(this.entities, toAdd, at == null ? this.length : at);
+        this.length = this.entities.length;
+      }
+
+      // Silently sort the collection if appropriate.
+      if (sort) this.sort({silent: true});
+
+      // Unless silenced, it's time to fire all appropriate add/sort/update events.
+      if (!options.silent) {
+        for (i = 0; i < toAdd.length; i++) {
+          if (at != null) options.index = at + i;
+          entity = toAdd[i];
+          entity.trigger('add', entity, this, options);
+        }
+        if (sort || orderChanged) this.trigger('sort', this, options);
+        if (toAdd.length || toRemove.length || toMerge.length) {
+          options.changes = {
+            added: toAdd,
+            removed: toRemove,
+            merged: toMerge
+          };
+          this.trigger('update', this, options);
+        }
+      }
+
+      // Return the added (or merged) entity (or entities).
+      return singular ? entities[0] : entities;
+    },
+
+    // When you have more items than you want to add or remove individually,
+    // you can reset the entire set with a new list of entities, without firing
+    // any granular `add` or `remove` events. Fires `reset` when finished.
+    // Useful for bulk operations and optimizations.
+    reset: function(entities, options) {
+      options = options ? langx.clone(options) : {};
+      for (var i = 0; i < this.entities.length; i++) {
+        this._removeReference(this.entities[i], options);
+      }
+      options.previousEntitys = this.entities;
+      this._reset();
+      entities = this.add(entities, langx.mixin({silent: true}, options));
+      if (!options.silent) this.trigger('reset', this, options);
+      return entities;
+    },
+
+    // Add a entity to the end of the collection.
+    push: function(entity, options) {
+      return this.add(entity, langx.mixin({at: this.length}, options));
+    },
+
+    // Remove a entity from the end of the collection.
+    pop: function(options) {
+      var entity = this.at(this.length - 1);
+      return this.remove(entity, options);
+    },
+
+    // Add a entity to the beginning of the collection.
+    unshift: function(entity, options) {
+      return this.add(entity, langx.mixin({at: 0}, options));
+    },
+
+    // Remove a entity from the beginning of the collection.
+    shift: function(options) {
+      var entity = this.at(0);
+      return this.remove(entity, options);
+    },
+
+    // Slice out a sub-array of entities from the collection.
+    slice: function() {
+      return slice.apply(this.entities, arguments);
+    },
+
+    // Get a entity from the set by id, cid, entity object with id or cid
+    // properties, or an attributes object that is transformed through entityId.
+    get: function(obj) {
+      if (obj == null) return void 0;
+      return this._byId[obj] ||
+        this._byId[this.entityId(obj.attributes || obj)] ||
+        obj.cid && this._byId[obj.cid];
+    },
+
+    // Returns `true` if the entity is in the collection.
+    has: function(obj) {
+      return this.get(obj) != null;
+    },
+
+    // Get the entity at the given index.
+    at: function(index) {
+      if (index < 0) index += this.length;
+      return this.entities[index];
+    },
+
+    // Return entities with matching attributes. Useful for simple cases of
+    // `filter`.
+    where: function(attrs, first) {
+      return this[first ? 'find' : 'filter'](attrs);
+    },
+
+    // Return the first entity with matching attributes. Useful for simple cases
+    // of `find`.
+    findWhere: function(attrs) {
+      return this.where(attrs, true);
+    },
+
+    // Force the collection to re-sort itself. You don't need to call this under
+    // normal circumstances, as the set will maintain sort order as each item
+    // is added.
+    sort: function(options) {
+      var comparator = this.comparator;
+      if (!comparator) throw new Error('Cannot sort a set without a comparator');
+      options || (options = {});
+
+      var length = comparator.length;
+      if (langx.isFunction(comparator)) comparator = langx.proxy(comparator, this);
+
+      // Run sort based on type of `comparator`.
+      if (length === 1 || langx.isString(comparator)) {
+        this.entities = this.sortBy(comparator);
+      } else {
+        this.entities.sort(comparator);
+      }
+      if (!options.silent) this.trigger('sort', this, options);
+      return this;
+    },
+
+    // Pluck an attribute from each entity in the collection.
+    pluck: function(attr) {
+      return this.map(attr + '');
+    },
+
+    // Fetch the default set of entities for this collection, resetting the
+    // collection when they arrive. If `reset: true` is passed, the response
+    // data will be passed through the `reset` method instead of `set`.
+    fetch: function(options) {
+      options = langx.mixin({parse: true}, options);
+      var success = options.success;
+      var collection = this;
+      options.success = function(resp) {
+        var method = options.reset ? 'reset' : 'set';
+        collection[method](resp, options);
+        if (success) success.call(options.context, collection, resp, options);
+        collection.trigger('sync', collection, resp, options);
+      };
+      wrapError(this, options);
+      return this.sync('read', this, options);
+    },
+
+    // Create a new instance of a entity in this collection. Add the entity to the
+    // collection immediately, unless `wait: true` is passed, in which case we
+    // wait for the server to agree.
+    create: function(entity, options) {
+      options = options ? langx.clone(options) : {};
+      var wait = options.wait;
+      entity = this._prepareEntity(entity, options);
+      if (!entity) return false;
+      if (!wait) this.add(entity, options);
+      var collection = this;
+      var success = options.success;
+      options.success = function(m, resp, callbackOpts) {
+        if (wait) collection.add(m, callbackOpts);
+        if (success) success.call(callbackOpts.context, m, resp, callbackOpts);
+      };
+      entity.save(null, options);
+      return entity;
+    },
+
+    // **parse** converts a response into a list of entities to be added to the
+    // collection. The default implementation is just to pass it through.
+    parse: function(resp, options) {
+      return resp;
+    },
+
+    // Create a new collection with an identical list of entities as this one.
+    clone: function() {
+      return new this.constructor(this.entities, {
+        entity: this.entity,
+        comparator: this.comparator
+      });
+    },
+
+    // Define how to uniquely identify entities in the collection.
+    entityId: function(attrs) {
+      return attrs[this.entity.prototype.idAttribute || 'id'];
+    },
+
+    // Private method to reset all internal state. Called when the collection
+    // is first initialized or reset.
+    _reset: function() {
+      this.length = 0;
+      this.entities = [];
+      this._byId  = {};
+    },
+
+    // Prepare a hash of attributes (or other entity) to be added to this
+    // collection.
+    _prepareEntity: function(attrs, options) {
+      if (this._isEntity(attrs)) {
+        if (!attrs.collection) attrs.collection = this;
+        return attrs;
+      }
+      options = options ? langx.clone(options) : {};
+      options.collection = this;
+      var entity = new this.entity(attrs, options);
+      if (!entity.validationError) return entity;
+      this.trigger('invalid', this, entity.validationError, options);
+      return false;
+    },
+
+    // Internal method called by both remove and set.
+    _removeEntitys: function(entities, options) {
+      var removed = [];
+      for (var i = 0; i < entities.length; i++) {
+        var entity = this.get(entities[i]);
+        if (!entity) continue;
+
+        var index = this.indexOf(entity);
+        this.entities.splice(index, 1);
+        this.length--;
+
+        // Remove references before triggering 'remove' event to prevent an
+        // infinite loop. #3693
+        delete this._byId[entity.cid];
+        var id = this.entityId(entity.attributes);
+        if (id != null) delete this._byId[id];
+
+        if (!options.silent) {
+          options.index = index;
+          entity.trigger('remove', entity, this, options);
+        }
+
+        removed.push(entity);
+        this._removeReference(entity, options);
+      }
+      return removed;
+    },
+
+    // Method for checking whether an object should be considered a entity for
+    // the purposes of adding to the collection.
+    _isEntity: function(entity) {
+      return entity instanceof Entity;
+    },
+
+    // Internal method to create a entity's ties to a collection.
+    _addReference: function(entity, options) {
+      this._byId[entity.cid] = entity;
+      var id = this.entityId(entity.attributes);
+      if (id != null) this._byId[id] = entity;
+      entity.on('all', this._onEntityEvent, this);
+    },
+
+    // Internal method to sever a entity's ties to a collection.
+    _removeReference: function(entity, options) {
+      delete this._byId[entity.cid];
+      var id = this.entityId(entity.attributes);
+      if (id != null) delete this._byId[id];
+      if (this === entity.collection) delete entity.collection;
+      entity.off('all', this._onEntityEvent, this);
+    },
+
+    // Internal method called every time a entity in the set fires an event.
+    // Sets need to update their indexes when entities change ids. All other
+    // events simply proxy through. "add" and "remove" events that originate
+    // in other collections are ignored.
+    _onEntityEvent: function(event, entity, collection, options) {
+      if (entity) {
+        if ((event === 'add' || event === 'remove') && collection !== this) return;
+        if (event === 'destroy') this.remove(entity, options);
+        if (event === 'change') {
+          var prevId = this.entityId(entity.previousAttributes());
+          var id = this.entityId(entity.attributes);
+          if (prevId !== id) {
+            if (prevId != null) delete this._byId[prevId];
+            if (id != null) this._byId[id] = entity;
+          }
+        }
+      }
+      this.trigger.apply(this, arguments);
+    }
+
+  });
+
+    function models() {
+        return models;
+    }
+
+    langx.mixin(models, {
+        // set a `X-Http-Method-Override` header.
+        emulateHTTP : false,
+
+        // Turn on `emulateJSON` to support legacy servers that can't deal with direct
+        // `application/json` requests ... this will encode the body as
+        // `application/x-www-form-urlencoded` instead and will send the model in a
+        // form param named `model`.
+        emulateJSON : false,
+
+        sync : sync,
+
+        Entity: Entity,
+        Collection : Collection
+    });
+
+
+    return skylark.models = models;
 });
 
 define('skylark-utils/mover',[
@@ -10388,8 +10880,8 @@ define('skylark-utils/main',[
     "./finder",
     "./fx",
     "./geom",
-    "./http",
     "./images",
+    "./models",
     "./mover",
     "./noder",
     "./query",
