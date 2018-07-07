@@ -169,17 +169,20 @@ define([
         };
     })();
 
-    function createProxy(event) {
+    function createProxy(src,props) {
         var key,
             proxy = {
-                originalEvent: event
+                originalEvent: src
             };
-        for (key in event) {
-            if (key !== "keyIdentifier" && !ignoreProperties.test(key) && event[key] !== undefined) {
-                proxy[key] = event[key];
+        for (key in src) {
+            if (key !== "keyIdentifier" && !ignoreProperties.test(key) && src[key] !== undefined) {
+                proxy[key] = src[key];
             }
         }
-        return compatible(proxy, event);
+        if (props) {
+            langx.mixin(proxy,props);
+        }
+        return compatible(proxy, src);
     }
 
     var
@@ -509,7 +512,7 @@ define([
         // need to check if document.body exists for IE as that browser reports
         // document ready when it hasn't yet created the body elm
         if (readyRE.test(document.readyState) && document.body) {
-            callback()
+            langx.defer(callback);
         } else {
             document.addEventListener('DOMContentLoaded', callback, false);
         }

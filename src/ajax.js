@@ -179,7 +179,9 @@ define([
                     return obj != null ? langx.mixin(obj, promise) : promise
                 }
             },
-            deferred = {}
+            deferred = {};
+
+        promise.pipe = promise.then;
 
         langx.each(tuples, function(i, tuple) {
             var list = tuple[2],
@@ -198,11 +200,12 @@ define([
                 return this
             }
             deferred[tuple[0] + "With"] = list.fireWith
-        })
+        });
 
-        promise.promise(deferred)
+        promise.promise(deferred);
         if (func) func.call(deferred, deferred)
-        return deferred
+        
+        return deferred;
     }
 
     var when = function(sub) {

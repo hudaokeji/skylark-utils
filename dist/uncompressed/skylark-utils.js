@@ -41,7 +41,7 @@
             };
             require(id);
         } else {
-            resolved[id] = factory;
+            map[id] = factory;
         }
     };
     require = globals.require = function(id) {
@@ -897,6 +897,18 @@ define('skylark-utils/geom',[
         }
     }
 
+    function marginRect(elm) {
+        var obj = this.relativeRect(elm),
+            me = this.marginExtents(elm);
+
+        return {
+                left: obj.left,
+                top: obj.top,
+                width: obj.width + me.left + me.right,
+                height: obj.height + me.top + me.bottom
+            };
+    }
+
 
     function paddingExtents(elm) {
         var s = getComputedStyle(elm);
@@ -961,8 +973,8 @@ define('skylark-utils/geom',[
 
             // Subtract parent offsets and element margins
             return {
-                top: offset.top - parentOffset.top - pbex.top - mex.top,
-                left: offset.left - parentOffset.left - pbex.left - mex.left
+                top: offset.top - parentOffset.top - pbex.top,// - mex.top,
+                left: offset.left - parentOffset.left - pbex.left,// - mex.left
             }
         } else {
             var props = {
@@ -990,8 +1002,8 @@ define('skylark-utils/geom',[
 
             // Subtract parent offsets and element margins
             return {
-                top: offset.top - parentOffset.top - pbex.top - mex.top,
-                left: offset.left - parentOffset.left - pbex.left - mex.left,
+                top: offset.top - parentOffset.top - pbex.top, // - mex.top,
+                left: offset.left - parentOffset.left - pbex.left, // - mex.left,
                 width: offset.width,
                 height: offset.height
             }
@@ -1144,6 +1156,8 @@ define('skylark-utils/geom',[
         height: height,
 
         marginExtents: marginExtents,
+
+        marginRect : marginRect,
 
         offsetParent: offsetParent,
 
@@ -1504,17 +1518,21 @@ define('skylark-utils/finder',[
 
     var simpleClassSelectorRE = /^\.([\w-]*)$/,
         simpleIdSelectorRE = /^#([\w-]*)$/,
+        rinputs = /^(?:input|select|textarea|button)$/i,
+        rheader = /^h\d$/i,
         slice = Array.prototype.slice;
 
 
     local.parseSelector = local.Slick.parse;
 
 
-    local.pseudos = {
+    var pseudos = local.pseudos = {
         // custom pseudos
-        'checkbox': function(elm){
-            return elm.type === "checkbox";
+        "button": function( elem ) {
+            var name = elem.nodeName.toLowerCase();
+            return name === "input" && elem.type === "button" || name === "button";
         },
+
         'checked': function(elm) {
             return !!elm.checked;
         },
@@ -1535,6 +1553,10 @@ define('skylark-utils/finder',[
             return (idx == value);
         },
 
+        'even' : function(elm, idx, nodes, value) {
+            return (idx % 2) === 1;
+        },
+
         'focus': function(elm) {
             return document.activeElement === elm && (elm.href || elm.type || elm.tabindex);
         },
@@ -1551,9 +1573,17 @@ define('skylark-utils/finder',[
             return find(elm, sel);
         },
 
+        // Element/input types
+        "header": function( elem ) {
+            return rheader.test( elem.nodeName );
+        },
 
         'hidden': function(elm) {
             return !local.pseudos["visible"](elm);
+        },
+
+        "input": function( elem ) {
+            return rinputs.test( elem.nodeName );
         },
 
         'last': function(elm, idx, nodes) {
@@ -1568,12 +1598,12 @@ define('skylark-utils/finder',[
             return !matches(elm, sel);
         },
 
-        'parent': function(elm) {
-            return !!elm.parentNode;
+        'odd' : function(elm, idx, nodes, value) {
+            return (idx % 2) === 0;
         },
 
-        'radio': function(elm){
-            return elm.type === "radio";
+        'parent': function(elm) {
+            return !!elm.parentNode;
         },
 
         'selected': function(elm) {
@@ -1590,8 +1620,35 @@ define('skylark-utils/finder',[
     };
 
     ["first","eq","last"].forEach(function(item){
-        local.pseudos[item].isArrayFilter = true;
+        pseudos[item].isArrayFilter = true;
     });
+
+
+
+    pseudos["nth"] = pseudos["eq"];
+
+    function createInputPseudo( type ) {
+        return function( elem ) {
+            var name = elem.nodeName.toLowerCase();
+            return name === "input" && elem.type === type;
+        };
+    }
+
+    function createButtonPseudo( type ) {
+        return function( elem ) {
+            var name = elem.nodeName.toLowerCase();
+            return (name === "input" || name === "button") && elem.type === type;
+        };
+    }
+
+    // Add button/input type pseudos
+    for ( i in { radio: true, checkbox: true, file: true, password: true, image: true } ) {
+        pseudos[ i ] = createInputPseudo( i );
+    }
+    for ( i in { submit: true, reset: true } ) {
+        pseudos[ i ] = createButtonPseudo( i );
+    }
+
 
     local.divide = function(cond) {
         var nativeSelector = "",
@@ -2333,6 +2390,12 @@ define('skylark-utils/datax',[
         }
     }
 
+    function cleanData(elm) {
+        if (elm["_$_store"]) {
+            delete elm["_$_store"];
+        }
+    }
+
     function removeData(elm, names) {
         if (langx.isString(names)) {
             names = names.split(/\s+/);
@@ -2409,6 +2472,8 @@ define('skylark-utils/datax',[
         
         attr: attr,
 
+        cleanData : cleanData,
+        
         data: data,
 
         pluck: pluck,
@@ -2600,17 +2665,20 @@ define('skylark-utils/eventer',[
         };
     })();
 
-    function createProxy(event) {
+    function createProxy(src,props) {
         var key,
             proxy = {
-                originalEvent: event
+                originalEvent: src
             };
-        for (key in event) {
-            if (key !== "keyIdentifier" && !ignoreProperties.test(key) && event[key] !== undefined) {
-                proxy[key] = event[key];
+        for (key in src) {
+            if (key !== "keyIdentifier" && !ignoreProperties.test(key) && src[key] !== undefined) {
+                proxy[key] = src[key];
             }
         }
-        return compatible(proxy, event);
+        if (props) {
+            langx.mixin(proxy,props);
+        }
+        return compatible(proxy, src);
     }
 
     var
@@ -2940,7 +3008,7 @@ define('skylark-utils/eventer',[
         // need to check if document.body exists for IE as that browser reports
         // document ready when it hasn't yet created the body elm
         if (readyRE.test(document.readyState) && document.body) {
-            callback()
+            langx.defer(callback);
         } else {
             document.addEventListener('DOMContentLoaded', callback, false);
         }
@@ -3879,6 +3947,11 @@ define('skylark-utils/query',[
                 })
             },
 
+            pushStack : function(elms) {
+                var ret = $(elms);
+                ret.prevObject = this;
+                return ret;
+            },
             show: wrapper_every_act(fx.show, fx),
 
             replaceWith: function(newContent) {
@@ -4120,6 +4193,35 @@ define('skylark-utils/query',[
 
         $.fn.append = wrapper_node_operation(noder.append, noder);
 
+
+        langx.each( {
+            appendTo: "append",
+            prependTo: "prepend",
+            insertBefore: "before",
+            insertAfter: "after",
+            replaceAll: "replaceWith"
+        }, function( name, original ) {
+            $.fn[ name ] = function( selector ) {
+                var elems,
+                    ret = [],
+                    insert = $( selector ),
+                    last = insert.length - 1,
+                    i = 0;
+
+                for ( ; i <= last; i++ ) {
+                    elems = i === last ? this : this.clone( true );
+                    $( insert[ i ] )[ original ]( elems );
+
+                    // Support: Android <=4.0 only, PhantomJS 1 only
+                    // .get() because push.apply(_, arraylike) throws on ancient WebKit
+                    push.apply( ret, elems.get() );
+                }
+
+                return this.pushStack( ret );
+            };
+        } );
+
+/*
         $.fn.insertAfter = function(html) {
             $(html).after(this);
             return this;
@@ -4140,7 +4242,12 @@ define('skylark-utils/query',[
             return this;
         };
 
-        return $
+        $.fn.replaceAll = function(selector) {
+            $(selector).replaceWith(this);
+            return this;
+        };
+*/
+        return $;
     })();
 
     (function($) {
@@ -4476,7 +4583,9 @@ define('skylark-utils/ajax',[
                     return obj != null ? langx.mixin(obj, promise) : promise
                 }
             },
-            deferred = {}
+            deferred = {};
+
+        promise.pipe = promise.then;
 
         langx.each(tuples, function(i, tuple) {
             var list = tuple[2],
@@ -4495,11 +4604,12 @@ define('skylark-utils/ajax',[
                 return this
             }
             deferred[tuple[0] + "With"] = list.fireWith
-        })
+        });
 
-        promise.promise(deferred)
+        promise.promise(deferred);
         if (func) func.call(deferred, deferred)
-        return deferred
+        
+        return deferred;
     }
 
     var when = function(sub) {
