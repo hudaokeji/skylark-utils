@@ -158,7 +158,20 @@ define([
 	    // subclasses using an alternative DOM manipulation API.
 	    _setAttributes: function(attributes) {
 	      this.$el.attr(attributes);
-	    }
+	    },
+
+        // Translation function, gets the message key to be translated
+        // and an object with context specific data as arguments:
+        i18n: function (message, context) {
+            message = (this.messages && this.messages[message]) || message.toString();
+            if (context) {
+                langx.each(context, function (key, value) {
+                    message = message.replace('{' + key + '}', value);
+                });
+            }
+            return message;
+        },
+
   	});
 
 

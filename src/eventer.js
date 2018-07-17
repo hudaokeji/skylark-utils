@@ -62,19 +62,20 @@ define([
                 window["TextEvent"], // 12
                 window["TouchEvent"], // 13
                 window["UIEvent"], // 14
-                window["WheelEvent"] // 15
+                window["WheelEvent"], // 15
+                window["ClipboardEvent"] // 16
             ],
             NativeEvents = {
                 "compositionstart": 1, // CompositionEvent
                 "compositionend": 1, // CompositionEvent
                 "compositionupdate": 1, // CompositionEvent
 
-                "beforecopy": 2, // DragEvent
-                "beforecut": 2, // DragEvent
-                "beforepaste": 2, // DragEvent
-                "copy": 2, // DragEvent
-                "cut": 2, // DragEvent
-                "paste": 2, // DragEvent
+                "beforecopy": 16, // ClipboardEvent
+                "beforecut": 16, // ClipboardEvent
+                "beforepaste": 16, // ClipboardEvent
+                "copy": 16, // ClipboardEvent
+                "cut": 16, // ClipboardEvent
+                "paste": 16, // ClipboardEvent
 
                 "drag": 2, // DragEvent
                 "dragend": 2, // DragEvent
