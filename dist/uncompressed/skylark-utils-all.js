@@ -6926,20 +6926,20 @@ define('skylark-utils/filer',[
                 // Process the upload data (the blob and potential form data):
                 initXHRData(o);
                 // Add progress listeners for this chunk upload:
-                initProgressListener(o);
+                //initProgressListener(o);
                 jqXHR = $.ajax(o).done(function (result, textStatus, jqXHR) {
                         ub = getUploadedBytes(jqXHR) ||
                             (ub + o.chunkSize);
                         // Create a progress event if no final progress event
                         // with loaded equaling total has been triggered
                         // for this chunk:
-                        //if (currentLoaded + o.chunkSize - o._progress.loaded) {
-                        //    that._onProgress($.Event('progress', {
-                        //        lengthComputable: true,
-                        //        loaded: ub - o.uploadedBytes,
-                        //        total: ub - o.uploadedBytes
-                        //    }), o);
-                       // }
+                        if (currentLoaded + o.chunkSize - o._progress.loaded) {
+                            dfd.progress({
+                                lengthComputable: true,
+                                loaded: ub - o.uploadedBytes,
+                                total: ub - o.uploadedBytes
+                            });
+                        }
                         options.uploadedBytes = o.uploadedBytes = ub;
                         o.result = result;
                         o.textStatus = textStatus;
@@ -6987,7 +6987,6 @@ define('skylark-utils/filer',[
 
         return jqXhr;
     }
-
 
     var filer = function() {
         return filer;
