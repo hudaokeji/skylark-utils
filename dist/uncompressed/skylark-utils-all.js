@@ -2996,7 +2996,7 @@ define('skylark-utils/styler',[
     };
 
     langx.mixin(styler, {
-        autocssfix: true,
+        autocssfix: false,
         cssHooks : {
 
         },
@@ -3617,7 +3617,6 @@ define('skylark-utils/css',[
             index = index || sheet[rulesPropName].length;
 
             return insertRuleFunc.call(sheet, selector, css, index);
-
         }
     });
 
@@ -7487,6 +7486,134 @@ define('skylark-utils/fx',[
 
     return skylark.fx = fx;
 });
+define('skylark-utils/transforms',[
+    "./skylark",
+    "./langx",
+    "./browser",
+    "./datax",
+    "./styler"
+], function(skylark,langx,browser,datax,styler) {
+  var css3Transform = browser.normalizeCssProperty("transform");
+
+    function getMatrix(radian, x, y) {
+      var Cos = Math.cos(radian), Sin = Math.sin(radian);
+      return {
+        M11: Cos * x, M12: -Sin * y,
+        M21: Sin * x, M22: Cos * y
+      };
+    }
+
+  function getZoom(scale, zoom) {
+      return scale > 0 && scale > -zoom ? zoom :
+        scale < 0 && scale < zoom ? -zoom : 0;
+  }
+
+    function change(el,d) {
+      var matrix = getMatrix(d.radian, d.y, d.x);
+      styler.css(el,css3Transform, "matrix("
+        + matrix.M11.toFixed(16) + "," + matrix.M21.toFixed(16) + ","
+        + matrix.M12.toFixed(16) + "," + matrix.M22.toFixed(16) + ", 0, 0)"
+      );      
+  }
+
+  function transformData(el,d) {
+    if (d) {
+      datax.data(el,"transform",d);
+    } else {
+      d = datax.data(el,"transform") || {};
+      d.radian = d.radian || 0;
+      d.x = d.x || 1;
+      d.y = d.y || 1;
+      return d;     
+    }
+  }
+
+  var calcs = {
+    //Vertical flip
+    vertical : function (d) {
+        d.radian = Math.PI - d.radian; 
+        d.y *= -1;
+    },
+
+   //Horizontal flip
+    horizontal : function (d) {
+        d.radian = Math.PI - d.radian; 
+        d.x *= -1;
+    },
+
+    //Rotate according to angle
+    rotate : function (d,degress) {
+        d.radian = degress * Math.PI / 180;; 
+    },
+
+    //Turn left 90 degrees
+    left : function (d) {
+        d.radian -= Math.PI / 2; 
+    },
+
+    //Turn right 90 degrees
+    right : function (d) {
+        d.radian += Math.PI / 2; 
+    },
+ 
+    //zoom
+    scale: function (d,zoom) {
+        var hZoom = getZoom(d.y, zoom), vZoom = getZoom(d.x, zoom);
+        if (hZoom && vZoom) {
+          d.y += hZoom; 
+          d.x += vZoom;
+        }
+    }, 
+
+    //zoom in
+    zoomin: function (d) { 
+      calcs.scale(d,Math.abs(d.zoom)); 
+    },
+    
+    //zoom out
+    zoomout: function (d) { 
+      calcs.scale(d,-Math.abs(d.zoom)); 
+    }
+
+  };
+ 
+  
+  function _createApiMethod(calcFunc) {
+    return function() {
+      var args = langx.makeArray(arguments),
+        el = args.shift(),
+          d = transformData(el);
+        args.unshift(d);
+        calcFunc.apply(this,args)
+        change(el,d);
+        transformData(el,d);
+    }
+  }
+  
+  function transforms() {
+    return transforms;
+  }
+
+  ["vertical","horizontal","rotate","left","right","scale","zoom","zoomin","zoomout"].forEach(function(name){
+    transforms[name] = _createApiMethod(calcs[name]);
+  });
+
+  langx.mixin(transforms, {
+    reset : function(el) {
+      var d = {
+        x : 1,
+        y : 1,
+        radian : 0,
+      }
+      change(el,d);
+      transformData(el,d);
+    }
+  });
+
+
+  return skylark.transforms = transforms;
+});
+
 define('skylark-utils/query',[
     "./skylark",
     "./langx",
@@ -8345,8 +8472,13 @@ define('skylark-utils/query',[
 define('skylark-utils/images',[
     "./skylark",
     "./langx",
+    "./noder",
+    "./geom",
+    "./styler",
+    "./datax",
+    "./transforms",
     "./query"
-], function(skylark,langx,$) {
+], function(skylark,langx,noder,geom,styler,datax,transforms,$) {
 
   var elementNodeTypes = {
     1: true,
@@ -8632,7 +8764,7 @@ define('skylark-utils/images',[
   });
 
 
-   $.fn.imagesLoaded = function( options, callback ) {
+  $.fn.imagesLoaded = function( options, callback ) {
       var inst = new ImagesLoaded( this, options, callback );
 
       var d = new langx.Deferred();
@@ -8650,17 +8782,108 @@ define('skylark-utils/images',[
       });
 
       return d.promise;
-   };
+  };
 
-    function images() {
-        return images;
+  function viewer(el,options) {
+    var img ,
+        style = {},
+        clientSize = geom.clientSize(el),
+        loadedCallback = options.loaded,
+        faileredCallback = options.failered;
+
+    function onload() {
+        styler.css(img,{//居中
+          top: (clientSize.height - img.offsetHeight) / 2 + "px",
+          left: (clientSize.width - img.offsetWidth) / 2 + "px"
+        });
+
+        transforms.reset(img);
+
+        styler.css(img,{
+          visibility: "visible"
+        });
+
+        if (loadedCallback) {
+          loadedCallback();
+        }
     }
 
-    langx.mixin(images, {
-      loaded : ImagesLoaded
-    });
+    function onerror() {
 
-    return skylark.images = images;
+    }
+    function _init() {
+      style = styler.css(el,["position","overflow"]);
+      if (style.position != "relative" && style.position != "absolute") { 
+        styler.css(el,"position", "relative" );
+      }
+      styler.css(el,"overflow", "hidden" );
+
+      img = new Image();
+
+      styler.css(img,{
+        position: "absolute",
+        border: 0, padding: 0, margin: 0, width: "auto", height: "auto",
+        visibility: "hidden"
+      });
+
+      img.onload = onload;
+      img.onerror = onerror;
+
+      noder.append(el,img);
+
+      if (options.url) {
+        _load(options.url);
+      }
+    }
+
+    function _load(url) {
+        img.style.visibility = "hidden";
+        img.src = url;
+    }
+
+    function _dispose() {
+        noder.remove(img);
+        styler.css(el,style);
+        img = img.onload = img.onerror = null;
+    }
+
+    _init();
+
+    var ret =  {
+      load : _load,
+      dispose : _dispose
+    };
+
+    ["vertical","horizontal","rotate","left","right","scale","zoom","zoomin","zoomout","reset"].forEach(
+      function(name){
+        ret[name] = function() {
+          var args = langx.makeArray(arguments);
+          args.unshift(img);
+          transforms[name].apply(null,args);
+        }
+      }
+    );
+
+    return ret;
+  }
+
+
+  $.fn.ImageTrans = function (options) {
+    return new ImageTrans(this, options);
+
+   };
+
+  function images() {
+    return images;
+  }
+
+  langx.mixin(images, {
+    loaded : ImagesLoaded,
+
+    viewer : viewer
+  });
+
+  return skylark.images = images;
 });
 
 define('skylark-utils/models',[
@@ -11596,6 +11819,7 @@ define('skylark-utils/main',[
     "./storages",
     "./styler",
     "./touchx",
+    "./transforms",
     "./langx",
     "./velm",
     "./widget"

@@ -21,6 +21,7 @@ define([
     "./storages",
     "./styler",
     "./touchx",
+    "./transforms",
     "./langx",
     "./velm",
     "./widget"

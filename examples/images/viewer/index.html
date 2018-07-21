@@ -1,0 +1,99 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=gb2312" />
+	<title>jQuery.ImageTrans Demo</title>
+	<link rel="canonical" href="http://codeyu.com/jQuery.ImageTrans/">
+	<script type="text/javascript" src="../../../dist/uncompressed/skylark-utils-all.js"></script>
+	<a href="https://github.com/codeyu/jQuery.ImageTrans"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
+</head>
+
+<body>
+	<style>
+		#idContainer {
+			border: 1px solid #000;
+			width: 800px;
+			height: 600px;
+			background: #FFF center no-repeat;
+		}
+	</style>
+	<div id="idContainer"> </div>
+	<input id="idLeft" type="button" value="Rotate Left" />
+	<input id="idRight" type="button" value="Rotate Right" />
+	<input id="idVertical" type="button" value="Vertical Transform" />
+	<input id="idHorizontal" type="button" value="Horizontal Transform" />
+	<input id="btnZoomOut" type="button" value="ZoomOut" />
+	<input id="btnZoomIn" type="button" value="ZoomIn" />
+	<input id="idReset" type="button" value="Reset" />
+	<input id="idCanvas" type="button" value="Using Canvas" />
+	<br>
+	<input id="idSrc" type="text" value="http://girl2016.b0.upaiyun.com/1531/d.jpg" style="width:600px" />
+	<input id="idLoad" type="button" value="OK" />
+	<input id="btnRandom" type="button" value="I’m Feeling Lucky" />
+	<script type="text/javascript">
+		var $ = skylarkjs.query;
+		$(function(){
+		var src = "http://girl2016.b0.upaiyun.com/1537/d.jpg";
+		var imageUrl = "loading.gif";
+		function pad(num, size) {
+			var s = num+"";
+			while (s.length < size) s = "0" + s;
+			return s;
+		}
+		var options = {
+				loading: function(){ $("#idContainer").css('background-image', 'url(' + imageUrl + ')'); },
+				loaded: function(){ $("#idContainer").css('background-image', ''); },
+				failered: function(err){ $("#idContainer").css('background-image', ''); alert(err); }
+			};
+		var it = skylarkjs.images.viewer($("#idContainer")[0], options); 
+			
+		it.load(src);
+		$("#btnZoomOut").on( "click", function(){ it.zoomout(); })
+		$("#btnZoomIn").on( "click", function(){ it.zoomin(); })
+		//垂直翻转
+		$("#idVertical").on( "click", function(){ 
+			it.vertical(); 
+		} )
+		//水平翻转
+		$("#idHorizontal").on( "click", function(){ 
+			it.horizontal(); 
+		} )
+		//左旋转
+		$("#idLeft").on( "click", function(){ 
+			it.left(); 
+		})
+		//右旋转
+		$("#idRight").on( "click", function(){ it.right(); })
+		//重置
+		$("#idReset").on( "click", function(){ it.reset(); })
+		//换图
+		$("#idLoad").on( "click", function(){ 
+			src = $("#idSrc").val();
+			it.load(src); 
+		})
+		//Canvas
+		$("#idCanvas").on( "click", function(){
+			if(this.value == "Using Default"){
+				this.value = "Using Canvas"; delete options.mode;
+			}else{
+				this.value = "Using Default"; options.mode = "canvas";
+			}
+			it.dispose();
+			it = $("#idContainer").ImageTrans( options ); 
+			it.load(src);
+		})
+		$("#btnRandom").on( "click", function(){ 
+			//返回指定范围的随机数(m-n之间)的公式:Math.random()*(n-m)+m 
+			var folder = Math.ceil(Math.random()*(1380-1341)+1341);
+			var file = pad(Math.ceil(Math.random()*(30-1)+1),3);
+
+			src = "http://girl2016.b0.upaiyun.com/" + folder + "/rosi-" + folder + "-" + file + ".jpg";
+			it.load( src ); 
+		})
+		});
+	</script>
+</body>
+
+</html>
