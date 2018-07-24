@@ -1266,10 +1266,10 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
             } else {
                 return new Deferred().resolve(valueOrPromise);
             }
-        } else if (!nativePromise) {
-            var deferred = new Deferred(valueOrPromise.cancel);
-            valueOrPromise.then(deferred.resolve, deferred.reject, deferred.progress);
-            valueOrPromise = deferred.promise;
+//        } else if (!nativePromise) {
+//            var deferred = new Deferred(valueOrPromise.cancel);
+//            valueOrPromise.then(deferred.resolve, deferred.reject, deferred.progress);
+//            valueOrPromise = deferred.promise;
         }
 
         if (callback || errback || progback) {
@@ -7495,13 +7495,15 @@ define('skylark-utils/transforms',[
 ], function(skylark,langx,browser,datax,styler) {
   var css3Transform = browser.normalizeCssProperty("transform");
 
-    function getMatrix(radian, x, y) {
-      var Cos = Math.cos(radian), Sin = Math.sin(radian);
-      return {
-        M11: Cos * x, M12: -Sin * y,
-        M21: Sin * x, M22: Cos * y
-      };
-    }
+  function getMatrix(radian, x, y) {
+    var Cos = Math.cos(radian), Sin = Math.sin(radian);
+    return {
+      M11: Cos * x, 
+      M12: -Sin * y,
+      M21: Sin * x, 
+      M22: Cos * y
+    };
+  }
 
   function getZoom(scale, zoom) {
       return scale > 0 && scale > -zoom ? zoom :
@@ -7524,6 +7526,7 @@ define('skylark-utils/transforms',[
       d.radian = d.radian || 0;
       d.x = d.x || 1;
       d.y = d.y || 1;
+      d.zoom = d.zoom || 1;
       return d;     
     }
   }
@@ -7567,16 +7570,16 @@ define('skylark-utils/transforms',[
 
     //zoom in
     zoomin: function (d) { 
-      calcs.scale(d,Math.abs(d.zoom)); 
+      calcs.scale(d,0.1); 
     },
     
     //zoom out
     zoomout: function (d) { 
-      calcs.scale(d,-Math.abs(d.zoom)); 
+      calcs.scale(d,-0.1); 
     }
 
   };
- 
+  
   
   function _createApiMethod(calcFunc) {
     return function() {
