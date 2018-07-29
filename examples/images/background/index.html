@@ -26,23 +26,27 @@
 
 <script>
 
-var imgLoad0 = skylarkjs.images.loaded( '.orange-tree', { background: true }, function() {
-  console.log('orange tree bg images loaded', imgLoad0.images.length );
+var imgLoad0 = skylarkjs.images.loaded( '.orange-tree', { background: true });
+
+imgLoad0.then(function(images) {
+  console.log('orange tree bg images loaded', images.length );
 });
 
-var imgLoad1 = skylarkjs.images.loaded( '.thunder-cloud', { background: true }, function() {
-  console.log('thunder cloud bg images loaded', imgLoad1.images.length);
+var imgLoad1 = skylarkjs.images.loaded( '.thunder-cloud', { background: true });
+
+imgLoad1.then(function(images) {
+  console.log('thunder cloud bg images loaded', images.length);
 });
 
-var imgLoad2 = skylarkjs.images.loaded( '.multi1', { background: true }, function() {
-  console.log('multi1 bg images loaded', imgLoad2.images.length);
+var imgLoad2 = skylarkjs.images.loaded( '.multi1', { background: true });
+imgLoad2.then(function(images) {
+  console.log('multi1 bg images loaded', images.length);
 });
-
-var imgLoad3 = skylarkjs.images.loaded( '.box', { background: true }, function() {
-  console.log('.box bg images loaded', imgLoad3.images.length);
-});
-imgLoad3.on('progress', function( e) {
+var imgLoad3 = skylarkjs.images.loaded( '.box', { background: true });
+imgLoad3.progress(function( e) {
   console.log( 'progress on .box', e.img.src);
+}).then(function(images) {
+  console.log('.box bg images loaded', images.length);
 });
 
 </script>

@@ -17,6 +17,7 @@ define([
         map = Array.prototype.map,
         filter = Array.prototype.filter,
         forEach = Array.prototype.forEach,
+        indexOf = Array.prototype.indexOf,
         isQ;
 
     var rquickExpr = /^(?:[^#<]*(<[\w\W]+>)[^>]*$|#([\w\-]*)$)/;
@@ -253,7 +254,7 @@ define([
 
             return self;
         }
-    }, Array);
+    });
 
     var query = (function() {
         isQ = function(object) {
@@ -282,6 +283,7 @@ define([
         langx.mixin($.fn, {
             // `map` and `slice` in the jQuery API work differently
             // from their array counterparts
+            length : 0,
 
             map: function(fn) {
                 return $(uniq(langx.map(this, function(el, i) {
@@ -293,8 +295,16 @@ define([
                 return $(slice.apply(this, arguments))
             },
 
+            forEach: function() {
+                return forEach.apply(this,arguments);
+            },
+
             get: function(idx) {
                 return idx === undefined ? slice.call(this) : this[idx >= 0 ? idx : idx + this.length]
+            },
+
+            indexOf: function() {
+                return indexOf.apply(this,arguments);
             },
 
             toArray: function() {
@@ -507,7 +517,7 @@ define([
 
             val: wrapper_value(datax.val, datax, datax.val),
 
-            offset: wrapper_value(geom.pageRect, geom, geom.pageRect),
+            offset: wrapper_value(geom.pagePosition, geom, geom.pagePosition),
 
             style: wrapper_name_value(styler.css, styler),
 
@@ -852,4 +862,5 @@ define([
 
 
     return skylark.query = query;
+
 });

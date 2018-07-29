@@ -1270,7 +1270,7 @@ define('skylark-utils/finder',[
         },
 
         'even' : function(elm, idx, nodes, value) {
-            return (idx % 2) === 1;
+            return (idx % 2) === 0;
         },
 
         'focus': function(elm) {
@@ -1315,7 +1315,7 @@ define('skylark-utils/finder',[
         },
 
         'odd' : function(elm, idx, nodes, value) {
-            return (idx % 2) === 0;
+            return (idx % 2) === 1;
         },
 
         'parent': function(elm) {
@@ -2034,7 +2034,7 @@ define('skylark-utils/datax',[
                 }
                 return this;
             } else {
-                if (elm.hasAttribute(name)) {
+                if (elm.hasAttribute && elm.hasAttribute(name)) {
                     return elm.getAttribute(name);
                 }
             }
@@ -5005,6 +5005,7 @@ define('skylark-utils/query',[
         map = Array.prototype.map,
         filter = Array.prototype.filter,
         forEach = Array.prototype.forEach,
+        indexOf = Array.prototype.indexOf,
         isQ;
 
     var rquickExpr = /^(?:[^#<]*(<[\w\W]+>)[^>]*$|#([\w\-]*)$)/;
@@ -5241,7 +5242,7 @@ define('skylark-utils/query',[
 
             return self;
         }
-    }, Array);
+    });
 
     var query = (function() {
         isQ = function(object) {
@@ -5270,6 +5271,7 @@ define('skylark-utils/query',[
         langx.mixin($.fn, {
             // `map` and `slice` in the jQuery API work differently
             // from their array counterparts
+            length : 0,
 
             map: function(fn) {
                 return $(uniq(langx.map(this, function(el, i) {
@@ -5281,8 +5283,16 @@ define('skylark-utils/query',[
                 return $(slice.apply(this, arguments))
             },
 
+            forEach: function() {
+                return forEach.apply(this,arguments);
+            },
+
             get: function(idx) {
                 return idx === undefined ? slice.call(this) : this[idx >= 0 ? idx : idx + this.length]
+            },
+
+            indexOf: function() {
+                return indexOf.apply(this,arguments);
             },
 
             toArray: function() {
@@ -5495,7 +5505,7 @@ define('skylark-utils/query',[
 
             val: wrapper_value(datax.val, datax, datax.val),
 
-            offset: wrapper_value(geom.pageRect, geom, geom.pageRect),
+            offset: wrapper_value(geom.pagePosition, geom, geom.pagePosition),
 
             style: wrapper_name_value(styler.css, styler),
 
@@ -5840,6 +5850,7 @@ define('skylark-utils/query',[
 
 
     return skylark.query = query;
+
 });
 define('skylark-utils/images',[
     "./skylark",
@@ -5859,16 +5870,12 @@ define('skylark-utils/images',[
   };
 
   var ImagesLoaded = langx.Evented.inherit({
-  /**
+   /**
    * @param {Array, Element, NodeList, String} elem
    * @param {Object or Function} options - if function, use as callback
    * @param {Function} onAlways - callback function
    */
     init : function(elem, options, onAlways) {
-      // coerce ImagesLoaded() without new, to be new ImagesLoaded()
-      if ( !( this instanceof ImagesLoaded ) ) {
-        return new ImagesLoaded( elem, options, onAlways );
-      }
       // use elem as selector string
       if ( typeof elem == 'string' ) {
         elem = document.querySelectorAll( elem );
@@ -5968,7 +5975,7 @@ define('skylark-utils/images',[
     },
 
     addBackground : function( url, elem ) {
-      var background = new Background( url, elem );
+      var background = new PreloadImage( url, elem );
       this.images.push( background );
     },
 
@@ -6020,9 +6027,9 @@ define('skylark-utils/images',[
     complete : function() {
       var eventName = this.hasAnyBroken ? 'fail' : 'done';
       this.isComplete = true;
-      this.trigger( eventName);
-      this.trigger( 'always');
-
+      this.trigger(langx.createEvent(eventName,{
+        images : this.images
+      }));
     }
 
   });
@@ -6067,9 +6074,7 @@ define('skylark-utils/images',[
         isLoaded : isLoaded
       }));
     },
-
-    // ----- events ----- //
-
+ // ----- events ----- //
     // trigger specified handler for event type
     handleEvent : function( event ) {
       var method = 'on' + event.type;
@@ -6098,8 +6103,8 @@ define('skylark-utils/images',[
   });
 
 
-  // -------------------------- Background -------------------------- //
-  var Background = LoadingImage.inherit({
+  // -------------------------- PreloadImage -------------------------- //
+  var PreloadImage = LoadingImage.inherit({
 
     init : function( url, element ) {
       this.url = url;
@@ -6135,9 +6140,8 @@ define('skylark-utils/images',[
     }
   });
 
-
-  $.fn.imagesLoaded = function( options, callback ) {
-      var inst = new ImagesLoaded( this, options, callback );
+  function loaded(el,options, callback ) {
+      var inst = new ImagesLoaded( el, options, callback );
 
       var d = new langx.Deferred();
       
@@ -6146,7 +6150,7 @@ define('skylark-utils/images',[
       });
 
       inst.on("done",function(e){
-        d.resolve(e);
+        d.resolve(e.images);
       });
 
       inst.on("fail",function(e){
@@ -6154,7 +6158,16 @@ define('skylark-utils/images',[
       });
 
       return d.promise;
+  }
+
+  function preload(urls,options) {
+
+  }
+
+  $.fn.imagesLoaded = function( options, callback ) {
+      return loaded(this,options,callback);
   };
+
 
   function viewer(el,options) {
     var img ,
@@ -6240,17 +6253,22 @@ define('skylark-utils/images',[
   }
 
 
-  $.fn.ImageTrans = function (options) {
-    return new ImageTrans(this, options);
-
-   };
-
   function images() {
     return images;
   }
 
+  images.transform = function (el,options) {
+  };
+
+  ["vertical","horizontal","rotate","left","right","scale","zoom","zoomin","zoomout","reset"].forEach(
+    function(name){
+      images.transform[name] = transforms[name];
+    }
+  );
+
+
   langx.mixin(images, {
-    loaded : ImagesLoaded,
+    loaded : loaded,
 
     viewer : viewer
   });
