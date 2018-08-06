@@ -221,6 +221,10 @@ define([
                         }
                     } else {
                         // if selector is css selector
+                        if (langx.isString(context)) {
+                            context = finder.find(context);
+                        }
+
                         nodes = finder.descendants(context, selector);
                     }
                 } else {

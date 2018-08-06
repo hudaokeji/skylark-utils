@@ -429,51 +429,50 @@ define('skylark-utils/noder',[
         return name;
     };
 
+    function after(node, placing, copyByClone) {
+        var refNode = node,
+            parent = refNode.parentNode;
+        if (parent) {
+            var nodes = ensureNodes(placing, copyByClone),
+                refNode = refNode.nextSibling;
+
+            for (var i = 0; i < nodes.length; i++) {
+                if (refNode) {
+                    parent.insertBefore(nodes[i], refNode);
+                } else {
+                    parent.appendChild(nodes[i]);
+                }
+            }
+        }
+        return this;
+    }
+
+    function append(node, placing, copyByClone) {
+        var parentNode = node,
+            nodes = ensureNodes(placing, copyByClone);
+        for (var i = 0; i < nodes.length; i++) {
+            parentNode.appendChild(nodes[i]);
+        }
+        return this;
+    }
+
+    function before(node, placing, copyByClone) {
+        var refNode = node,
+            parent = refNode.parentNode;
+        if (parent) {
+            var nodes = ensureNodes(placing, copyByClone);
+            for (var i = 0; i < nodes.length; i++) {
+                parent.insertBefore(nodes[i], refNode);
+            }
+        }
+        return this;
+    }
+
     function contents(elm) {
         if (nodeName(elm, "iframe")) {
             return elm.contentDocument;
         }
         return elm.childNodes;
-    }
-
-    function html(node, html) {
-        if (html === undefined) {
-            return node.innerHTML;
-        } else {
-            this.empty(node);
-            html = html || "";
-            if (langx.isString(html) || langx.isNumber(html)) {
-                node.innerHTML = html;
-            } else if (langx.isArrayLike(html)) {
-                for (var i = 0; i < html.length; i++) {
-                    node.appendChild(html[i]);
-                }
-            } else {
-                node.appendChild(html);
-            }
-        }
-    }
-
-    function clone(node, deep) {
-        var self = this,
-            clone;
-
-        // TODO: Add feature detection here in the future
-        if (!isIE || node.nodeType !== 1 || deep) {
-            return node.cloneNode(deep);
-        }
-
-        // Make a HTML5 safe shallow copy
-        if (!deep) {
-            clone = document.createElement(node.nodeName);
-
-            // Copy attribs
-            each(self.getAttribs(node), function(attr) {
-                self.setAttrib(clone, attr.nodeName, self.getAttrib(node, attr.nodeName));
-            });
-
-            return clone;
-        }
     }
 
     function createElement(tag, props,parent) {
@@ -511,6 +510,28 @@ define('skylark-utils/noder',[
         return dom;
     }
 
+    function clone(node, deep) {
+        var self = this,
+            clone;
+
+        // TODO: Add feature detection here in the future
+        if (!isIE || node.nodeType !== 1 || deep) {
+            return node.cloneNode(deep);
+        }
+
+        // Make a HTML5 safe shallow copy
+        if (!deep) {
+            clone = document.createElement(node.nodeName);
+
+            // Copy attribs
+            each(self.getAttribs(node), function(attr) {
+                self.setAttrib(clone, attr.nodeName, self.getAttrib(node, attr.nodeName));
+            });
+
+            return clone;
+        }
+    }
+
     function contains(node, child) {
         return isChildOf(child, node);
     }
@@ -529,6 +550,24 @@ define('skylark-utils/noder',[
             node.removeChild(child);
         }
         return this;
+    }
+
+    function html(node, html) {
+        if (html === undefined) {
+            return node.innerHTML;
+        } else {
+            this.empty(node);
+            html = html || "";
+            if (langx.isString(html) || langx.isNumber(html)) {
+                node.innerHTML = html;
+            } else if (langx.isArrayLike(html)) {
+                for (var i = 0; i < html.length; i++) {
+                    node.appendChild(html[i]);
+                }
+            } else {
+                node.appendChild(html);
+            }
+        }
     }
 
     function isChildOf(node, parent,directly) {
@@ -570,35 +609,6 @@ define('skylark-utils/noder',[
         return  doc.defaultView || doc.parentWindow;
     } 
 
-    function after(node, placing, copyByClone) {
-        var refNode = node,
-            parent = refNode.parentNode;
-        if (parent) {
-            var nodes = ensureNodes(placing, copyByClone),
-                refNode = refNode.nextSibling;
-
-            for (var i = 0; i < nodes.length; i++) {
-                if (refNode) {
-                    parent.insertBefore(nodes[i], refNode);
-                } else {
-                    parent.appendChild(nodes[i]);
-                }
-            }
-        }
-        return this;
-    }
-
-    function before(node, placing, copyByClone) {
-        var refNode = node,
-            parent = refNode.parentNode;
-        if (parent) {
-            var nodes = ensureNodes(placing, copyByClone);
-            for (var i = 0; i < nodes.length; i++) {
-                parent.insertBefore(nodes[i], refNode);
-            }
-        }
-        return this;
-    }
 
     function prepend(node, placing, copyByClone) {
         var parentNode = node,
@@ -614,13 +624,13 @@ define('skylark-utils/noder',[
         return this;
     }
 
-    function append(node, placing, copyByClone) {
-        var parentNode = node,
-            nodes = ensureNodes(placing, copyByClone);
-        for (var i = 0; i < nodes.length; i++) {
-            parentNode.appendChild(nodes[i]);
+
+    function offsetParent(elm) {
+        var parent = elm.offsetParent || document.body;
+        while (parent && !rootNodeRE.test(parent.nodeName) && styler.css(parent, "position") == "static") {
+            parent = parent.offsetParent;
         }
-        return this;
+        return parent;
     }
 
     function overlay(elm, params) {
@@ -756,6 +766,10 @@ define('skylark-utils/noder',[
     }
 
     langx.mixin(noder, {
+        body : function() {
+            return document.body;
+        },
+
         clone: clone,
         contents: contents,
 
@@ -777,6 +791,10 @@ define('skylark-utils/noder',[
 
         isDoc: isDoc,
 
+        isWindow : langx.isWindow,
+
+        offsetParent : offsetParent,
+        
         ownerDoc: ownerDoc,
 
         ownerWindow : ownerWindow,
@@ -2213,19 +2231,41 @@ define('skylark-utils/datax',[
 define('skylark-utils/geom',[
     "./skylark",
     "./langx",
+    "./noder",
     "./styler"
-], function(skylark, langx, styler) {
+], function(skylark, langx, noder,styler) {
     var rootNodeRE = /^(?:body|html)$/i,
-        px = langx.toPixel;
+        px = langx.toPixel,
+        offsetParent = noder.offsetParent,
+        cachedScrollbarWidth;
 
-    function offsetParent(elm) {
-        var parent = elm.offsetParent || document.body;
-        while (parent && !rootNodeRE.test(parent.nodeName) && styler.css(parent, "position") == "static") {
-            parent = parent.offsetParent;
+
+    function scrollbarWidth() {
+        if ( cachedScrollbarWidth !== undefined ) {
+            return cachedScrollbarWidth;
         }
-        return parent;
-    }
+        var w1, w2,
+            div = noder.createFragment( "<div style=" +
+                "'display:block;position:absolute;width:200px;height:200px;overflow:hidden;'>" +
+                "<div style='height:300px;width:auto;'></div></div>" )[0],
+            innerDiv = div.childNodes[0];
 
+        noder.append(document.body,div);
+
+        w1 = innerDiv.offsetWidth;
+        
+        styler.css( div, "overflow", "scroll" );
+
+        w2 = innerDiv.offsetWidth;
+
+        if ( w1 === w2 ) {
+            w2 = div[0].clientWidth;
+        }
+
+        noder.remove(div);
+
+        return ( cachedScrollbarWidth = w1 - w2 );
+    }
 
     function borderExtents(elm) {
         var s = getComputedStyle(elm);
@@ -2662,6 +2702,8 @@ define('skylark-utils/geom',[
         relativePosition: relativePosition,
 
         relativeRect: relativeRect,
+
+        scrollbarWidth : scrollbarWidth,
 
         scrollIntoView: scrollIntoView,
 
@@ -3201,7 +3243,22 @@ define('skylark-utils/eventer',[
     }
 
     var keyCodeLookup = {
-        "delete": 46
+        "backspace": 8,
+        "comma": 188,
+        "delete": 46,
+        "down": 40,
+        "end": 35,
+        "enter": 13,
+        "escape": 27,
+        "home": 36,
+        "left": 37,
+        "page_down": 34,
+        "page_up": 33,
+        "period": 190,
+        "right": 39,
+        "space": 32,
+        "tab": 9,
+        "up": 38        
     };
     //example:
     //shortcuts(elm).add("CTRL+ALT+SHIFT+X",function(){console.log("test!")});
@@ -3275,6 +3332,8 @@ define('skylark-utils/eventer',[
 
     langx.mixin(eventer, {
         create: createEvent,
+
+        keys : keyCodeLookup,
 
         off: off,
 
@@ -5209,6 +5268,10 @@ define('skylark-utils/query',[
                         }
                     } else {
                         // if selector is css selector
+                        if (langx.isString(context)) {
+                            context = finder.find(context);
+                        }
+
                         nodes = finder.descendants(context, selector);
                     }
                 } else {
@@ -8999,39 +9062,119 @@ define('skylark-utils/velm',[
     return skylark.velm = velm;
 });
 
-define('skylark-utils/widget',[
+define('skylark-utils/widgets',[
     "./skylark",
     "./langx",
     "./noder",
+    "./datax",
     "./styler",
     "./geom",
     "./eventer",
-    "./query"
-], function(skylark,langx,noder,styler,geom,eventer,query) {
-  // Cached regex to split keys for `delegate`.
-  var delegateEventSplitter = /^(\S+)\s*(.*)$/;
+    "./query",
+    "./velm"
+], function(skylark,langx,noder, datax, styler, geom, eventer,query,velm) {
+	// Cached regex to split keys for `delegate`.
+	var delegateEventSplitter = /^(\S+)\s*(.*)$/,
+		slice = Array.prototype.slice;
 
-    function widget() {
-        return widget;
-    }
+
+	function bridge( name, object ) {
+		var fullName = object.prototype.widgetFullName || name,
+			fn = {};
+
+		function _delegate (isQuery) {
+
+		}
+
+		fn[name] = function( options ) {
+			var isMethodCall = typeof options === "string";
+			var args = slice.call( arguments, 1 );
+			var returnValue = this;
+
+			if ( isMethodCall ) {
+
+				// If this is an empty collection, we need to have the instance method
+				// return undefined instead of the jQuery instance
+				if ( !this.length && options === "instance" ) {
+					returnValue = undefined;
+				} else {
+					this.each( function() {
+						var methodValue;
+						var instance = datax.data( this, fullName );
+
+						if ( options === "instance" ) {
+							returnValue = instance;
+							return false;
+						}
+
+						if ( !instance ) {
+							return $.error( "cannot call methods on " + name +
+								" prior to initialization; " +
+								"attempted to call method '" + options + "'" );
+						}
+
+						if ( !$.isFunction( instance[ options ] ) || options.charAt( 0 ) === "_" ) {
+							return $.error( "no such method '" + options + "' for " + name +
+								" widget instance" );
+						}
+
+						methodValue = instance[ options ].apply( instance, args );
+
+						if ( methodValue !== instance && methodValue !== undefined ) {
+							returnValue = methodValue && methodValue.jquery ?
+								returnValue.pushStack( methodValue.get() ) :
+								methodValue;
+							return false;
+						}
+					} );
+				}
+			} else {
+
+				// Allow multiple hashes to be passed on init
+				if ( args.length ) {
+					options = $.widget.extend.apply( null, [ options ].concat( args ) );
+				}
+
+				this.each( function() {
+					var instance = datax.data( this, fullName );
+					if ( instance ) {
+						instance.option( options || {} );
+						if ( instance._init ) {
+							instance._init();
+						}
+					} else {
+						datax.data( this, fullName, new object( options, this ) );
+					}
+				} );
+			}
+
+			return returnValue;
+		};
+	};
+
+	function widget() {
+	    return widget;
+	}
 
 	var Widget = langx.Evented.inherit({
-        init :function(el,options) {
-            if (!langx.isHtmlNode(el)) {
-                options = el;
-                el = null;
-            }
-            if (el) {
-            	this.el = el;
-        	}
-            if (options) {
-                langx.mixin(this,options);
-            }
-            if (!this.cid) {
-                this.cid = langx.uniqueId('w');
-            }
-            this._ensureElement();
-        },
+	    init :function(options,el) {
+	    	//for supporting init(el,options)
+	        if (langx.isHtmlNode(options)) {
+	        	var _t = el,
+	        		options = el;
+	            el = options;
+	        }
+	        if (el) {
+	        	this.el = el;
+	    	}
+	        if (options) {
+	            langx.mixin(this,options);
+	        }
+	        if (!this.cid) {
+	            this.cid = langx.uniqueId('w');
+	        }
+	        this._ensureElement();
+	    },
 
 	    // The default `tagName` of a View's element is `"div"`.
 	    tagName: 'div',
@@ -9161,29 +9304,33 @@ define('skylark-utils/widget',[
 	      this.$el.attr(attributes);
 	    },
 
-        // Translation function, gets the message key to be translated
-        // and an object with context specific data as arguments:
-        i18n: function (message, context) {
-            message = (this.messages && this.messages[message]) || message.toString();
-            if (context) {
-                langx.each(context, function (key, value) {
-                    message = message.replace('{' + key + '}', value);
-                });
-            }
-            return message;
-        },
+	    // Translation function, gets the message key to be translated
+	    // and an object with context specific data as arguments:
+	    i18n: function (message, context) {
+	        message = (this.messages && this.messages[message]) || message.toString();
+	        if (context) {
+	            langx.each(context, function (key, value) {
+	                message = message.replace('{' + key + '}', value);
+	            });
+	        }
+	        return message;
+	    },
 
-  	});
+		});
+
+	function defineWidgetClass(name,base,prototype) {
+
+	};
+
+	langx.mixin(widget, {
+		$ : query,
+
+		define : defineWidgetClass,
+		Widget : Widget
+	});
 
 
-    langx.mixin(widget, {
-    	$ : query,
-
-    	Widget : Widget
-    });
-
-
-    return skylark.widget = widget;
+	return skylark.widget = widget;
 });
 
 define('skylark-utils/main',[
@@ -9212,7 +9359,7 @@ define('skylark-utils/main',[
     "./transforms",
     "./langx",
     "./velm",
-    "./widget"
+    "./widgets"
 ], function(skylark) {
     return skylark;
 })

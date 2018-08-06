@@ -522,7 +522,22 @@ define([
     }
 
     var keyCodeLookup = {
-        "delete": 46
+        "backspace": 8,
+        "comma": 188,
+        "delete": 46,
+        "down": 40,
+        "end": 35,
+        "enter": 13,
+        "escape": 27,
+        "home": 36,
+        "left": 37,
+        "page_down": 34,
+        "page_up": 33,
+        "period": 190,
+        "right": 39,
+        "space": 32,
+        "tab": 9,
+        "up": 38        
     };
     //example:
     //shortcuts(elm).add("CTRL+ALT+SHIFT+X",function(){console.log("test!")});
@@ -596,6 +611,8 @@ define([
 
     langx.mixin(eventer, {
         create: createEvent,
+
+        keys : keyCodeLookup,
 
         off: off,
 
