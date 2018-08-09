@@ -18,10 +18,10 @@ document.querySelector('#add').onclick = function() {
   container.insertBefore( fragment, container.firstChild );
   // use ImagesLoaded
   var imgLoad = skylarkjs.images.loaded( container );
-  imgLoad.on( 'progress', onProgress );
-  imgLoad.on( 'always', onAlways );
+  imgLoad.progress(onProgress );
+  imgLoad.always( onAlways );
   // reset progress counter
-  imageCount = imgLoad.images.length;
+  imageCount = imgLoad.totalCount;
   resetProgress();
   updateProgress( 0 );
 };
