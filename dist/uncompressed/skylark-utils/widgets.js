@@ -88,8 +88,8 @@ define([
 		};
 	};
 
-	function widget() {
-	    return widget;
+	function widgets() {
+	    return widgets;
 	}
 
 	var Widget = langx.Evented.inherit({
@@ -258,7 +258,7 @@ define([
 
 	};
 
-	langx.mixin(widget, {
+	langx.mixin(widgets, {
 		$ : query,
 
 		define : defineWidgetClass,
@@ -266,5 +266,5 @@ define([
 	});
 
 
-	return skylark.widget = widget;
+	return skylark.widgets = widgets;
 });

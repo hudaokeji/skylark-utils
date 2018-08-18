@@ -27,15 +27,29 @@
 	<input id="btnZoomOut" type="button" value="ZoomOut" />
 	<input id="btnZoomIn" type="button" value="ZoomIn" />
 	<input id="idReset" type="button" value="Reset" />
-	<input id="idCanvas" type="button" value="Using Canvas" />
 	<br>
-	<input id="idSrc" type="text" value="http://girl2016.b0.upaiyun.com/1531/d.jpg" style="width:600px" />
+	<input id="idSrc" type="text" value="" style="width:600px" />
 	<input id="idLoad" type="button" value="OK" />
-	<input id="btnRandom" type="button" value="I’m Feeling Lucky" />
+	<input id="btnRandom" type="button" value="I am Feeling Lucky" />
 	<script type="text/javascript">
+		function getRandomImageUrl() {
+		  var size = Math.random() * 3 + 1;
+		  var width = Math.random() * 110 + 100;
+		  width = Math.round( width * size );
+		  var height = Math.round( 140 * size );
+		  var rando = Math.ceil( Math.random() * 1000 );
+		  // 10% chance of broken image src
+		  // random parameter to prevent cached images
+		  var url = rando < 100 ? '//foo/broken-' + rando + '.jpg' :
+		    // use picsum for great random images
+		    'https://picsum.photos/' + width + '/' + height + '/' + '?random';
+		  $("#idSrc").val(url);
+		  return url;
+		}
+
 		var $ = skylarkjs.query;
 		$(function(){
-		var src = "http://girl2016.b0.upaiyun.com/1537/d.jpg";
+		var src = getRandomImageUrl();
 		var imageUrl = "loading.gif";
 		function pad(num, size) {
 			var s = num+"";
@@ -73,23 +87,13 @@
 			src = $("#idSrc").val();
 			it.load(src); 
 		})
-		//Canvas
-		$("#idCanvas").on( "click", function(){
-			if(this.value == "Using Default"){
-				this.value = "Using Canvas"; delete options.mode;
-			}else{
-				this.value = "Using Default"; options.mode = "canvas";
-			}
-			it.dispose();
-			it = $("#idContainer").ImageTrans( options ); 
-			it.load(src);
-		})
+
 		$("#btnRandom").on( "click", function(){ 
 			//返回指定范围的随机数(m-n之间)的公式:Math.random()*(n-m)+m 
 			var folder = Math.ceil(Math.random()*(1380-1341)+1341);
 			var file = pad(Math.ceil(Math.random()*(30-1)+1),3);
 
-			src = "http://girl2016.b0.upaiyun.com/" + folder + "/rosi-" + folder + "-" + file + ".jpg";
+			src = getRandomImageUrl();
 			it.load( src ); 
 		})
 		});
