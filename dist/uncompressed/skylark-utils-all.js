@@ -377,7 +377,7 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
                             };
                         })(name, prop, _super[name]) :
                         prop;
-                } else if (typeof prop == "object" && prop!==null && (prop.get || prop.value !== undefined)) {
+                } else if (typeof prop == "object" && prop!==null && (prop.get)) {
                     Object.defineProperty(proto,name,prop);
                 } else {
                     proto[name] = prop;
@@ -609,6 +609,12 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         });
     }
 
+    /*
+     * Converts camel case into dashes.
+     * @param {String} str
+     * @return {String}
+     * @exapmle marginTop -> margin-top
+     */
     function dasherize(str) {
         return str.replace(/::/g, '/')
             .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
@@ -10983,8 +10989,10 @@ define('skylark-utils/widgets',[
 	        		options = el;
 	            el = options;
 	        }
-	        if (el) {
+	        if (langx.isHtmlNode(el)) {
 	        	this.el = el;
+	    	} else {
+	    		this.el = null;
 	    	}
 	        if (options) {
 	            langx.mixin(this,options);
@@ -11041,7 +11049,7 @@ define('skylark-utils/widgets',[
 	    // alternative DOM manipulation API and are only required to set the
 	    // `this.el` property.
 	    _setElement: function(el) {
-	      this.$el = widget.$(el);
+	      this.$el = widgets.$(el);
 	      this.el = this.$el[0];
 	    },
 
