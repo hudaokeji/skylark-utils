@@ -3,14 +3,14 @@
 <head>
     <style>
     ul li {list-style: none;}
-    ul#source li a { text-decoration: none;
+    ul#sources li a { text-decoration: none;
         color: #000;margin: 10px;width: 150px;
         border: 3px dashed #999;background: #eee;padding: 10px;display: block; }
     *[draggable=true] { -moz-user-select: none; -khtml-user-drag: element;cursor: move; }
     *:-khtml-drag { background-color: rgba(238, 238, 238, 0.5);}
-    ul#source li a:hover:after {content: ' (drag me)';}
-    ul#source { margin-left: 200px; min-height: 300px; }
-    ul#source li.over {border-color: #333;background: #ccc; }
+    ul#sources li a:hover:after {content: ' (drag me)';}
+    ul#sources { margin-left: 200px; min-height: 300px; }
+    ul#sources li.over {border-color: #333;background: #ccc; }
     #bin { height: 250px; width: 166px; float: left; border: 5px solid #000;position: relative;margin-top: 0; }
     #bin.over {border-color: red; }
     #bin.active { border-style: dashed; }
@@ -24,7 +24,7 @@
         packages: [{
             name: "skylark-utils",location: "../../dist/skylark-utils"
         }, {
-            name: "skylark-langx",location: "http://registry.skylarkjs.org/packages/skylark-langx/v0.9.0/uncompressed/skylark-langx"
+            name: "skylark-langx",location: "http://registry.skylarkjs.org/dev/langx/skylark-langx/uncompressed/skylark-langx"
         }]
     });
     </script>
@@ -34,7 +34,7 @@
     <article>
         <h4>Example : Skylark Drag and Drop Test: drag the list items over the dustbin, and drop them .</h4>
         <ul id="bin"></ul>
-        <ul id="source">
+        <ul id="sources">
             <li id = "li_1"><a id="one" href="#">one</a></li>
             <li id = "li_2"><a href="#" id="two">two</a></li>
             <li id = "li_3"><a href="#" id="three">three</a></li>
@@ -44,12 +44,9 @@
     </article>
     <script>
     require(["skylark-utils/finder", "skylark-utils/noder", "skylark-utils/dnd"], function(finder, noder, dnd) {
-        var source = document.querySelector('#source');
-            dnd.draggable(source,{
-            handle : "li",
-            preparing : function(e){
-                e.dragSource = e.handleElm;
-            },
+        var sources = document.querySelector('#sources');
+            dnd.draggable(sources,{
+            source : "li",
             started: function(e) {
                 e.ghost = e.dragSource;
                 e.transfer = {
