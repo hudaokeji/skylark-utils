@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<style>
+		pre {
+			background: #F4F4F4;
+			border: 1px solid #B2B2B2;
+			overflow: auto;
+		}
+	</style>
+	<style>
+		#jquery-example > div {
+			-jquery: $(this).append('<span>. A really excellent example</span>');
+			-jquery-gradient: #abcdef #fedcba vertical;
+		}
+		#toggle-example div {
+			height: 2em;
+		}
+		#toggle-example div div {
+			border: 1px solid purple;
+		}
+		#toggle-example > div:first div{
+			-jquery-show: fadeIn 2000;
+			-jquery-hide: 2000;
+		}
+		#toggle-example > div:last div{
+			-jquery-hide: fold fast;
+		}
+		#live-example > div {
+			-jquery-gradient: background-color aqua ! /* live */;
+			-jquery-hide: 2000 ! ;
+			-jquery-show: slow ! ;
+		}
+		.bold > div {
+			-jquery: $(this).append('<span>[I am bold!]</span>') ! $('span', this).remove();
+			-jquery-css: font-weight bold ! font-weight normal ;/* match/unmatch actions */
+		}
+			
+	</style>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.3/require.min.js"></script>
+    <script>
+    require.config({
+        baseUrl: "./",
+        packages: [{
+            name: "skylark-utils",location: "../../dist/uncompressed/skylark-utils"
+        }, {
+            name: "skylark-langx",location: "http://registry.skylarkjs.org/dev/langx/skylark-langx/uncompressed/skylark-langx"
+        }]
+    });
+    </script>
+</head>
+
+<body>
+	<h2>Test the parts of the parser:</h2>
+
+	<p>enter CSS to be parsed and press the button to see the resulting object.</p>
+	<textarea id = "source" rows="10" cols="100"></textarea> <br>
+	<input type="button" id="parsecss" value="ParseCSS"/>
+
+	<hr/>
+
+	<textarea id = "target"  rows="10" cols="100"></textarea><br/>
+
+    <script>
+    require(["skylark-utils/css", "skylark-utils/query"], function(css,$) {
+    	$("#parsecss").click(function(){
+    		var str = $("#source").val();
+    		var json = css.toJSON(str);
+    		$("#target").val(JSON.stringify(json));
+    	});
+    });
+    </script>
+</body>
+
+</html>
+

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.3/require.min.js"></script>
+    <script>
+    require.config({
+        baseUrl: "./",
+        packages: [{
+            name: "skylark-utils",location: "../../dist/skylark-utils"
+        }, {
+            name: "skylark-langx",location: "http://registry.skylarkjs.org/packages/skylark-langx/v0.9.0/uncompressed/skylark-langx"
+        }]
+    });
+    </script>
+</head>
+
+<body>
+    <h4>Example : <span>Click the fullscreen button.</span></h4>
+    <button>fullscreen</button>
+    <div id = "article">
+        <h1>A fullscrenn example</h1>
+        <p><a href="https://github.com/skylarkui/skylark-ui-album">skylark Album</a> is a touch-enabled, responsive and customizable image &amp; video gallery, carousel and lightbox, optimized for both mobile and desktop web browsers.<br>
+        It features swipe, mouse and keyboard navigation, transition effects, slideshow functionality, fullscreen support and on-demand content loading and can be extended to display additional content types.</p>
+        <ul class="navigation">
+            <li><a href="https://github.com/skylarkui/Gallery/tags">Download</a></li>
+            <li><a href="https://github.com/skylarkui/skylark-ui-album">Source Code</a></li>
+            <li><a href="https://github.com/skylarkui/skylark-ui-album/blob/master/README.md">Documentation</a></li>
+            <li><a href="https://blueimp.net">&copy; Sebastian Tschan</a></li>
+        </ul>
+        <br>
+    </div>
+    <script>
+    require(["skylark-utils/query", "skylark-utils/finder","skylark-utils/noder"], function($, finder, noder) {
+        $("button").on("click", function() {
+            var target = finder.byId("article");
+            noder.fullScreen(target);
+        });
+    });
+    </script>
+</body>
+
+</html>

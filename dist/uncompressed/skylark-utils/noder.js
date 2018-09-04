@@ -1,8 +1,9 @@
 define([
     "./skylark",
     "./langx",
+    "./browser",
     "./styler"
-], function(skylark, langx, styler) {
+], function(skylark, langx, browser, styler) {
     var isIE = !!navigator.userAgent.match(/Trident/g) || !!navigator.userAgent.match(/MSIE/g),
         fragmentRE = /^\s*<(\w+|!)[^>]*>/,
         singleTagRE = /^<(\w+)\s*\/?>(?:<\/\1>|)$/,
@@ -164,6 +165,18 @@ define([
             node.removeChild(child);
         }
         return this;
+    }
+
+    var fulledEl = null;
+    function fullScreen(el) {
+        if (el === false) {
+            browser.exitFullScreen.apply(document);
+        } else if (el) {
+            browser.requestFullScreen.apply(el);
+            fulledEl = el;
+        } else {
+            return fulledEl;
+        }
     }
 
     function html(node, html) {
@@ -398,6 +411,8 @@ define([
         doc: doc,
 
         empty: empty,
+
+        fullScreen : fullScreen,
 
         html: html,
 
