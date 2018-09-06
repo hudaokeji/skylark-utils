@@ -178,7 +178,7 @@ define([
     }
 
     /*
-     * Get the value of a property for the first element in the set of matched elements or set one or more properties for every matched element.
+     * Get or set the value of an property for the specified element.
      * @param {Object} elm  
      * @param {String} name
      * @param {String} value
