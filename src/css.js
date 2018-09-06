@@ -278,7 +278,30 @@ define([
             }
         }
         return str;
-    };
+    }
+
+    function toJSON(str) {      
+        var result = {};
+        var convertCode = function(code){
+            var r = {};
+            code = code.split(';')
+            for(var i in code){
+                if(code[i].indexOf(':') !== -1){
+                    var parts = code[i].split(':');
+                    r[parts[0].trim()] = parts[1].trim();
+                }
+            }
+            return r;
+        };
+        var rules = str.split('}');
+        for(var i = 0; i< rules.length; i++){
+            var parts = rules[i].split('{');
+            if(parts[0].trim() !== ""){
+                result[parts[0].trim()] = convertCode(parts[1]);
+            }
+        }
+        return result;   
+    }
    
 
     function css() {
@@ -303,6 +326,8 @@ define([
         insertSheetRule : insertSheetRule,
 
         removeStyleSheet : removeStyleSheet,
+
+        toJSON : toJSON,
 
         toString : toString
     });

@@ -1,7 +1,7 @@
 /**
  * skylark-utils - An Elegant HTML5 JavaScript Library.
  * @author Hudaokeji Co.,Ltd
- * @version v0.9.5-beta
+ * @version v0.9.5
  * @link www.skylarkjs.org
  * @license MIT
  */
@@ -2750,9 +2750,19 @@ define('skylark-utils/browser',[
         testEl = document.createElement("div"),
 
         matchesSelector = testEl.webkitMatchesSelector ||
-        testEl.mozMatchesSelector ||
-        testEl.oMatchesSelector ||
-        testEl.matchesSelector,
+                          testEl.mozMatchesSelector ||
+                          testEl.oMatchesSelector ||
+                          testEl.matchesSelector,
+
+        requestFullScreen = testEl.requestFullscreen || 
+                            testEl.webkitRequestFullscreen || 
+                            testEl.mozRequestFullScreen || 
+                            testEl.msRequestFullscreen,
+
+        exitFullScreen =  document.exitFullscreen ||
+                          document.webkitCancelFullScreen ||
+                          document.mozCancelFullScreen ||
+                          document.msExitFullscreen,
 
         testStyle = testEl.style;
 
@@ -2803,11 +2813,17 @@ define('skylark-utils/browser',[
 
         matchesSelector: matchesSelector,
 
+        requestFullScreen : requestFullScreen,
+
+        exitFullscreen : requestFullScreen,
+
         location: function() {
             return window.location;
         },
 
-        support : {}
+        support : {
+
+        }
 
     });
 
@@ -3024,8 +3040,9 @@ define('skylark-utils/styler',[
 define('skylark-utils/noder',[
     "./skylark",
     "./langx",
+    "./browser",
     "./styler"
-], function(skylark, langx, styler) {
+], function(skylark, langx, browser, styler) {
     var isIE = !!navigator.userAgent.match(/Trident/g) || !!navigator.userAgent.match(/MSIE/g),
         fragmentRE = /^\s*<(\w+|!)[^>]*>/,
         singleTagRE = /^<(\w+)\s*\/?>(?:<\/\1>|)$/,
@@ -3187,6 +3204,18 @@ define('skylark-utils/noder',[
             node.removeChild(child);
         }
         return this;
+    }
+
+    var fulledEl = null;
+    function fullScreen(el) {
+        if (el === false) {
+            browser.exitFullScreen.apply(document);
+        } else if (el) {
+            browser.requestFullScreen.apply(el);
+            fulledEl = el;
+        } else {
+            return fulledEl;
+        }
     }
 
     function html(node, html) {
@@ -3421,6 +3450,8 @@ define('skylark-utils/noder',[
         doc: doc,
 
         empty: empty,
+
+        fullScreen : fullScreen,
 
         html: html,
 
@@ -3744,7 +3775,30 @@ define('skylark-utils/css',[
             }
         }
         return str;
-    };
+    }
+
+    function toJSON(str) {      
+        var result = {};
+        var convertCode = function(code){
+            var r = {};
+            code = code.split(';')
+            for(var i in code){
+                if(code[i].indexOf(':') !== -1){
+                    var parts = code[i].split(':');
+                    r[parts[0].trim()] = parts[1].trim();
+                }
+            }
+            return r;
+        };
+        var rules = str.split('}');
+        for(var i = 0; i< rules.length; i++){
+            var parts = rules[i].split('{');
+            if(parts[0].trim() !== ""){
+                result[parts[0].trim()] = convertCode(parts[1]);
+            }
+        }
+        return result;   
+    }
    
 
     function css() {
@@ -3769,6 +3823,8 @@ define('skylark-utils/css',[
         insertSheetRule : insertSheetRule,
 
         removeStyleSheet : removeStyleSheet,
+
+        toJSON : toJSON,
 
         toString : toString
     });
@@ -4191,7 +4247,9 @@ define('skylark-utils/finder',[
         }
 
         if (tag = cond.tag) {
-            nativeSelector = tag.toUpperCase() + nativeSelector;
+            if (tag !== "*") {
+                nativeSelector = tag.toUpperCase() + nativeSelector;
+            }
         }
 
         if (!nativeSelector) {
@@ -10957,7 +11015,7 @@ define('skylark-utils/widgets',[
 								"attempted to call method '" + options + "'" );
 						}
 
-						if ( !$.isFunction( instance[ options ] ) || options.charAt( 0 ) === "_" ) {
+						if ( !langx.isFunction( instance[ options ] ) || options.charAt( 0 ) === "_" ) {
 							return $.error( "no such method '" + options + "' for " + name +
 								" widget instance" );
 						}
@@ -11001,8 +11059,8 @@ define('skylark-utils/widgets',[
 	}
 
 	var Widget = langx.Evented.inherit({
-	    init :function(options,el) {
-	    	//for supporting init(el,options)
+	    init :function(el,options) {
+	    	//for supporting init(options,el)
 	        if (langx.isHtmlNode(options)) {
 	        	var _t = el,
 	        		options = el;
@@ -11025,7 +11083,7 @@ define('skylark-utils/widgets',[
 	    // The default `tagName` of a View's element is `"div"`.
 	    tagName: 'div',
 
-	    // jQuery delegate for element lookup, scoped to DOM elements within the
+	    // query delegate for element lookup, scoped to DOM elements within the
 	    // current view. This should be preferred to global lookups where possible.
 	    $: function(selector) {
 	      return this.$el.find(selector);
