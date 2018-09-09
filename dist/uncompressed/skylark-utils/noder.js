@@ -175,7 +175,12 @@ define([
             browser.requestFullScreen.apply(el);
             fulledEl = el;
         } else {
-            return fulledEl;
+          return (
+            document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement
+          )
         }
     }
 
