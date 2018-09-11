@@ -577,7 +577,12 @@ define('skylark-utils/noder',[
             browser.requestFullScreen.apply(el);
             fulledEl = el;
         } else {
-            return fulledEl;
+          return (
+            document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement
+          )
         }
     }
 
@@ -1053,10 +1058,10 @@ define('skylark-utils/css',[
     function addSheetRules(sheetId,rules) {
         var sheet = sheetsById[sheetId],
             css;
-        if (langx.isPlainObject(rules)) {
-            css = toString(rules);
-        } else {
+        if (langx.isString(rules)) {
             css = rules;
+        } else {
+            css = toString(rules);
         }
 
         noder.append(sheet.node,noder.createTextNode(css));
@@ -1069,16 +1074,12 @@ define('skylark-utils/css',[
     }
 
     function toString(json){
-        var strAttr = function (name, value, depth) {
-            return css.SPACE.repeat(depth) + name.trim() + ': ' + value.trim() + ";\n";
-        };
-
         var adjust = function(parentName,name,depth) {
             if (parentName) {
                 if (isAtRule(parentName)) {
                     depth += 1;
                 } else {
-                    name =  parentName + name;
+                    name =  parentName + " " + name;
                 }                
             }
             return {
@@ -1087,82 +1088,83 @@ define('skylark-utils/css',[
             }
         };
 
-        var strAt = function(name,values,depth) {
-            var str = "";
-            if (langx.isString(values)) {
-                str = css.SPACE.repeat(depth) + name.trim() + " \"" + values + " \";";
-            } else if (langx.isPlainObject(values)) {
-                str += css.SPACE.repeat(depth) + name.trim() + " {\n";
-                str += strNode("",values,depth+1);
-                str += css.SPACE.repeat(depth) + "}\n";
-
-            } else {
-                throw new Error("Invalid param!");
-            }
-            return str;
-        };
-
         var strNode = function (name, values, depth) {
-            var str = "";
-            if (name) {
-                str += css.SPACE.repeat(depth) + name.trim() + " {\n";
+            var str = "",
+                atFlg = isAtRule(name);
 
-                for (var n in values) {
-                    var value =values[n];
-                    if (langx.isString(value)) {
-                        // css property
-                        str += strAttr(n,value,depth+1)
+
+            if (isAtRule(name)) {
+                // at rule
+                if (langx.isString(values)) {
+                    // an at rule without block
+                    // ex: (1) @charset 'utf8';
+                    str = css.SPACE.repeat(depth) + name.trim() + " \"" + values.trim() + " \";\n";
+                } else {
+                    // an at rule with block, ex :
+                    //  @media 'screen' {
+                    //  }
+                    str += css.SPACE.repeat(depth) + name.trim() + " {\n";
+                    str += strNode("",values,depth+1);
+                    str += css.SPACE.repeat(depth) + " }\n";
+                }
+            } else {
+                // a selector or a property
+                if (langx.isString(values)) {
+                    // a css property 
+                    // ex : (1) font-color : red;
+                    str = css.SPACE.repeat(depth) + name.trim() ;
+                    if (atFlg) {
+                        str = str +  " \"" + values.trim() + " \";\n";
+                    } else {
+                        str = str + ': ' + values.trim() + ";\n";
+                    }
+
+                } else {
+                    // a selector rule 
+                    // ex : (1) .class1 : {
+                    //            font-color : red;
+                    //          }
+                    if (langx.isArray(values)) {
+                        // array for ordering
+                        for (var n =0; n<values.length; n ++) {
+                           str +=  strNode(name,values[n],depth);
+                        }
+                    } else {
+                        // plain object
+
+                        if (name) {
+                            str += css.SPACE.repeat(depth) + name.trim() + " {\n";
+
+                            for (var n in values) {
+                                var value =values[n];
+                                if (langx.isString(value)) {
+                                    // css property
+                                    str += strNode(n,value,depth+1)
+                                }
+                            }
+
+                            str += css.SPACE.repeat(depth) + "}\n";
+                        }
+
+                        for (var n in values) {
+                            var value =values[n];
+                            if (!langx.isString(value)) {
+                                var adjusted = adjust(name,n,depth);
+                                str +=  strNode(adjusted.name,value,adjusted.depth);
+                            } 
+                        }
+
                     }
                 }
-
-                str += css.SPACE.repeat(depth) + "}\n";
-            }
-
-            for (var n in values) {
-                var value =values[n];
-                if (langx.isPlainObject(value)) {
-                    var adjusted = adjust(name,n,depth);
-                    str +=  strNode(adjusted.name,value,adjusted.depth);
-                } 
-            }
+            }   
 
             return str;
         };
 
-        var str = "";
-        for (var n in json) {
-            if (isAtRule(n)) {
-                str += strAt(n,json[n],0);
-            } else {
-                str += strNode(n,json[n],0);
-            }
-        }
-        return str;
-    }
 
-    function toJSON(str) {      
-        var result = {};
-        var convertCode = function(code){
-            var r = {};
-            code = code.split(';')
-            for(var i in code){
-                if(code[i].indexOf(':') !== -1){
-                    var parts = code[i].split(':');
-                    r[parts[0].trim()] = parts[1].trim();
-                }
-            }
-            return r;
-        };
-        var rules = str.split('}');
-        for(var i = 0; i< rules.length; i++){
-            var parts = rules[i].split('{');
-            if(parts[0].trim() !== ""){
-                result[parts[0].trim()] = convertCode(parts[1]);
-            }
-        }
-        return result;   
+        return strNode("",json,0);
     }
-   
+ 
 
     function css() {
         return css;
@@ -1186,8 +1188,6 @@ define('skylark-utils/css',[
         insertSheetRule : insertSheetRule,
 
         removeStyleSheet : removeStyleSheet,
-
-        toJSON : toJSON,
 
         toString : toString
     });
