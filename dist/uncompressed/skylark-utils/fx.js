@@ -166,6 +166,7 @@ define([
 
         return this;
     }
+
     /*   
      * Display the matched elements.
      * @param {Object} elm  
@@ -184,6 +185,7 @@ define([
         }
         return this;
     }
+
 
     /*   
      * Hide the matched elements.
@@ -234,6 +236,7 @@ define([
             }
         }, runEvery);
     }
+
     /*   
      * Display or hide the matched elements.
      * @param {Object} elm  
@@ -248,6 +251,7 @@ define([
         }
         return this;
     }
+
     /*   
      * Adjust the opacity of the matched elements.
      * @param {Object} elm  
@@ -260,6 +264,8 @@ define([
         animate(elm, { opacity: opacity }, speed, easing, callback);
         return this;
     }
+
+
     /*   
      * Display the matched elements by fading them to opaque.
      * @param {Object} elm  
@@ -280,6 +286,7 @@ define([
 
         return this;
     }
+
     /*   
      * Hide the matched elements by fading them to transparent.
      * @param {Object} elm  
@@ -316,6 +323,7 @@ define([
 
         return this;
     }
+
     /*   
      * Display or hide the matched elements by animating their opacity.
      * @param {Object} elm  
@@ -331,6 +339,7 @@ define([
         }
         return this;
     }
+
     /*   
      * Display the matched elements with a sliding motion.
      * @param {Object} elm  
@@ -388,6 +397,7 @@ define([
 
         return this;
     };
+
     /*   
      * Hide the matched elements with a sliding motion.
      * @param {Object} elm  
@@ -449,6 +459,7 @@ define([
         }
         return this;
     };
+
 
     /*   
      * Display or hide the matched elements with a sliding motion.

@@ -23,13 +23,13 @@ define([
             'frameborder': 'frameBorder',
             'contenteditable': 'contentEditable'
         };
-
     /*
      * Set property values
      * @param {Object} elm  
      * @param {String} name
      * @param {String} value
      */
+
     function setAttribute(elm, name, value) {
         if (value == null) {
             elm.removeAttribute(name);
@@ -42,13 +42,13 @@ define([
         return this.attr(elm, "aria-" + name, value);
     }
 
-
     /*
-     *  Get the value of an attribute for the first element in the set of matched elements or set one or more attributes for every matched element.
+     * Set property values
      * @param {Object} elm  
      * @param {String} name
      * @param {String} value
      */
+
     function attr(elm, name, value) {
         if (value === undefined) {
             if (typeof name === "object") {
@@ -67,10 +67,12 @@ define([
         }
     }
 
+
     /*
      *  Read all "data-*" attributes from a node
      * @param {Object} elm  
      */
+
     function _attributeData(elm) {
         var store = {}
         langx.each(elm.attributes || [], function(i, attr) {
@@ -122,6 +124,7 @@ define([
      * @param {String} value
      */
     function data(elm, name, value) {
+
         if (value === undefined) {
             if (typeof name === "object") {
                 for (var dataAttrName in name) {
@@ -135,17 +138,17 @@ define([
             _setData(elm, name, value);
             return this;
         }
-    }
+    } +
     /*
      * Remove from the element all items that have not yet been run. 
      * @param {Object} elm  
      */
+
     function cleanData(elm) {
         if (elm["_$_store"]) {
             delete elm["_$_store"];
         }
     }
-
 
     /*
      * Remove a previously-stored piece of data. 
@@ -163,7 +166,6 @@ define([
         return this;
     }
 
-
     /*
      * xxx 
      * @param {Object} elm  
@@ -176,7 +178,7 @@ define([
     }
 
     /*
-     * Get the value of a property for the first element in the set of matched elements or set one or more properties for every matched element.
+     * Get or set the value of an property for the specified element.
      * @param {Object} elm  
      * @param {String} name
      * @param {String} value
@@ -202,6 +204,7 @@ define([
         });
         return this;
     }
+
 
     /*
      * Remove the value of a property for the first element in the set of matched elements or set one or more properties for every matched element.

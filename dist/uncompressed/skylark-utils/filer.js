@@ -74,7 +74,11 @@ define([
         }
         return new Blob([u8arr], { type: mime });
     }
-
+    /*
+     * Make the specified element to could accept HTML5 file drag and drop.
+     * @param {HTMLElement} elm
+     * @param {PlainObject} params
+     */
     function dropzone(elm, params) {
         params = params || {};
         var hoverClass = params.hoverClass || "dropzone",
@@ -90,7 +94,6 @@ define([
         });
 
         on(elm, "dragover", function(e) {
-            // 
             if (e.dataTransfer && e.dataTransfer.types.indexOf("Files") > -1) {
                 eventer.stop(e);
             }
@@ -155,7 +158,11 @@ define([
 
         return this;
     }
-
+    /*
+     * Make the specified element to pop-up the file selection dialog box when clicked , and read the contents the files selected from client file system by user.
+     * @param {HTMLElement} elm
+     * @param {PlainObject} params
+     */
     function picker(elm, params) {
         on(elm, "click", function(e) {
             e.preventDefault();

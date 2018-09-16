@@ -370,6 +370,16 @@ define([
         return this;
     }
 
+    function removeChild(node,children) {
+        if (!langx.isArrayLike(children)) {
+            children = [children];
+        }
+        for (var i=0;i<children.length;i++) {
+            node.removeChild(children[i]);
+        }
+
+        return this;
+    }
     /*   
      * Replace an old node with the specified node.
      * @param {Node} node
@@ -551,6 +561,8 @@ define([
         append: append,
 
         remove: remove,
+
+        removeChild : removeChild,
 
         replace: replace,
 
