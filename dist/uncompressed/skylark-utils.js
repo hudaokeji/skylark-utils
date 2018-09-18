@@ -8903,7 +8903,7 @@ define('skylark-utils/velm',[
 
         var method = property;
 
-        Velm.prototype[ method ] = function (value) {
+        VisualElement.prototype[method ] = function (value) {
 
             this.css( property, value );
 
@@ -8920,7 +8920,7 @@ define('skylark-utils/velm',[
 
         var method = event;
 
-        Velm.prototype[ method ] = function ( callback ) {
+        VisualElement.prototype[method ] = function ( callback ) {
 
             this.on( event.toLowerCase(), callback);
 
