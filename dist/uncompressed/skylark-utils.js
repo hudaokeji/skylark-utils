@@ -2599,7 +2599,7 @@ define('skylark-utils/datax',[
             _setData(elm, name, value);
             return this;
         }
-    } +
+    } 
     /*
      * Remove from the element all items that have not yet been run. 
      * @param {Object} elm  
