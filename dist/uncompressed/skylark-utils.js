@@ -668,6 +668,8 @@ define('skylark-utils/noder',[
         }
     }
 
+   var rxhtmlTag = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:]+)[^>]*)\/>/gi;
+ 
     /*   
      * Get the HTML contents of the first element in the set of matched elements.
      * @param {HTMLElement} node
@@ -680,6 +682,9 @@ define('skylark-utils/noder',[
             this.empty(node);
             html = html || "";
             if (langx.isString(html) || langx.isNumber(html)) {
+
+                html = html.replace( rxhtmlTag, "<$1></$2>" );
+               
                 node.innerHTML = html;
             } else if (langx.isArrayLike(html)) {
                 for (var i = 0; i < html.length; i++) {
@@ -690,6 +695,7 @@ define('skylark-utils/noder',[
             }
         }
     }
+
 
     /*   
      * Check to see if a dom node is a descendant of another dom node.
