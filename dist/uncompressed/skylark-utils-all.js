@@ -1134,18 +1134,50 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
         return prefix ? prefix + id : id;
     }
 
+    mixin(Promise.prototype,{
+        always: function(handler) {
+            //this.done(handler);
+            //this.fail(handler);
+            this.then(handler,handler);
+            return this;
+        },
+        done : function(handler) {
+            this.then(handler);
+            return this;
+        },
+        fail : function(handler) { 
+            //return mixin(Promise.prototype.catch.call(this,handler),added);
+            //return this.then(null,handler);
+            this.catch(handler);
+            return this;
+        }
+    });
+
+
     var Deferred = function() {
         var self = this,
             p = this.promise = new Promise(function(resolve, reject) {
                 self._resolve = resolve;
                 self._reject = reject;
-            }),
-           added = {
+            });
+
+        wrapPromise(p,self);
+
+        this[PGLISTENERS] = [];
+
+        //this.resolve = Deferred.prototype.resolve.bind(this);
+        //this.reject = Deferred.prototype.reject.bind(this);
+        //this.progress = Deferred.prototype.progress.bind(this);
+
+    };
+
+    function wrapPromise(p,d) {
+        var   added = {
                 state : function() {
-                    if (self.isResolved()) {
+                    if (d.isResolved()) {
                         return 'resolved';
                     }
-                    if (self.isRejected()) {
+                    if (d.isRejected()) {
                         return 'rejected';
                     }
                     return 'pending';
@@ -1170,19 +1202,6 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
                                 }
                             }),added);
                 },
-                always: function(handler) {
-                    //this.done(handler);
-                    //this.fail(handler);
-                    this.then(handler,handler);
-                    return this;
-                },
-                done : function(handler) {
-                    return this.then(handler);
-                },
-                fail : function(handler) { 
-                    //return mixin(Promise.prototype.catch.call(this,handler),added);
-                    return this.then(null,handler);
-                }, 
                 progress : function(handler) {
                     self[PGLISTENERS].push(handler);
                     return this;
@@ -1191,15 +1210,9 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
             };
 
         added.pipe = added.then;
-        mixin(p,added);
+        return mixin(p,added);
 
-        this[PGLISTENERS] = [];
-
-        //this.resolve = Deferred.prototype.resolve.bind(this);
-        //this.reject = Deferred.prototype.reject.bind(this);
-        //this.progress = Deferred.prototype.progress.bind(this);
-
-    };
+    }
 
     Deferred.prototype.resolve = function(value) {
         var args = slice.call(arguments);
@@ -1254,11 +1267,11 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
     Deferred.prototype.done  = Deferred.prototype.then;
 
     Deferred.all = function(array) {
-        return Promise.all(array);
+        return wrapPromise(Promise.all(array));
     };
 
     Deferred.first = function(array) {
-        return Promise.race(array);
+        return wrapPromise(Promise.race(array));
     };
 
 
@@ -1272,10 +1285,10 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
             } else {
                 return new Deferred().resolve(valueOrPromise);
             }
-//        } else if (!nativePromise) {
-//            var deferred = new Deferred(valueOrPromise.cancel);
-//            valueOrPromise.then(deferred.resolve, deferred.reject, deferred.progress);
-//            valueOrPromise = deferred.promise;
+        } else if (!nativePromise) {
+            var deferred = new Deferred(valueOrPromise.cancel);
+            valueOrPromise.then(deferred.resolve, deferred.reject, deferred.progress);
+            valueOrPromise = deferred.promise;
         }
 
         if (callback || errback || progback) {
@@ -1292,7 +1305,7 @@ define('skylark-langx/langx',["./skylark"], function(skylark) {
 
     Deferred.resolve = function(data) {
         var d = new Deferred();
-        d.resolve(data);
+        d.resolve.apply(d,arguments);
         return d.promise;
     };
 
