@@ -45,7 +45,8 @@
     "gulp-usemin": "^0.3.11",
     "gulp-util": "^3.0.6",
     "run-sequence": "^2.1.0",
-    "skylark-langx": "^0.9.4"
+    "skylark-langx": "https://github.com/skylarklangx/skylark-langx#master",
+    "skylark-utils-dom": "https://github.com/skylarkutils/skylark-utils-dom#master"
   },
   "engines": {
     "node": ">=0.8.0"

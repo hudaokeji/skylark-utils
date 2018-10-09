@@ -25,6 +25,9 @@ var requireConfig = {
     },{
        name : "skylark-langx" ,
        location :  util.lib_langx+"uncompressed/skylark-langx"
+    },{
+       name : "skylark-utils-dom" ,
+       location :  util.lib_utils_dom+"uncompressed/skylark-utils-dom"
 
     }],
     paths: {

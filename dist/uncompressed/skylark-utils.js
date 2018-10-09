@@ -84,13 +84,17 @@ define('skylark-utils/skylark',["skylark-langx/skylark"], function(skylark) {
     return skylark;
 });
 
-define('skylark-utils/langx',[
+define('skylark-utils-dom/skylark',["skylark-langx/skylark"], function(skylark) {
+    return skylark;
+});
+
+define('skylark-utils-dom/langx',[
     "skylark-langx/langx"
 ], function(langx) {
     return langx;
 });
 
-define('skylark-utils/browser',[
+define('skylark-utils-dom/browser',[
     "./skylark",
     "./langx"
 ], function(skylark,langx) {
@@ -197,7 +201,13 @@ define('skylark-utils/browser',[
     return skylark.browser = browser;
 });
 
-define('skylark-utils/styler',[
+define('skylark-utils/browser',[
+    "skylark-utils-dom/browser"
+], function(browser) {
+    return browser;
+});
+
+define('skylark-utils-dom/styler',[
     "./skylark",
     "./langx"
 ], function(skylark, langx) {
@@ -448,7 +458,7 @@ define('skylark-utils/styler',[
 
     return skylark.styler = styler;
 });
-define('skylark-utils/noder',[
+define('skylark-utils-dom/noder',[
     "./skylark",
     "./langx",
     "./browser",
@@ -1037,7 +1047,7 @@ define('skylark-utils/noder',[
 
     return skylark.noder = noder;
 });
-define('skylark-utils/css',[
+define('skylark-utils-dom/css',[
     "./skylark",
     "./langx",
     "./noder"
@@ -1369,7 +1379,13 @@ define('skylark-utils/css',[
     return skylark.css = css;
 });
 
-define('skylark-utils/finder',[
+define('skylark-utils/css',[
+    "skylark-utils-dom/css"
+], function(css) {
+    return css;
+});
+
+define('skylark-utils-dom/finder',[
     "./skylark",
     "./langx",
     "./browser",
@@ -2467,7 +2483,7 @@ define('skylark-utils/finder',[
 
     return skylark.finder = finder;
 });
-define('skylark-utils/datax',[
+define('skylark-utils-dom/datax',[
     "./skylark",
     "./langx",
     "./finder"
@@ -2753,7 +2769,31 @@ define('skylark-utils/datax',[
 
     return skylark.datax = datax;
 });
-define('skylark-utils/geom',[
+define('skylark-utils/datax',[
+    "skylark-utils-dom/datax"
+], function(datax) {
+    return datax;
+});
+
+define('skylark-utils/langx',[
+    "skylark-langx/langx"
+], function(langx) {
+    return langx;
+});
+
+define('skylark-utils/noder',[
+    "skylark-utils-dom/noder"
+], function(noder) {
+    return noder;
+});
+
+define('skylark-utils/finder',[
+    "skylark-utils-dom/finder"
+], function(finder) {
+    return finder;
+});
+
+define('skylark-utils-dom/geom',[
     "./skylark",
     "./langx",
     "./noder",
@@ -3647,7 +3687,13 @@ define('skylark-utils/geom',[
 
     return skylark.geom = geom;
 });
-define('skylark-utils/eventer',[
+define('skylark-utils/geom',[
+    "skylark-utils-dom/geom"
+], function(geom) {
+    return geom;
+});
+
+define('skylark-utils-dom/eventer',[
     "./skylark",
     "./langx",
     "./browser",
@@ -4319,6 +4365,263 @@ define('skylark-utils/eventer',[
     });
 
     return skylark.eventer = eventer;
+});
+define('skylark-utils/eventer',[
+    "skylark-utils-dom/eventer"
+], function(eventer) {
+    return eventer;
+});
+
+define('skylark-utils/styler',[
+    "./skylark",
+    "./langx"
+], function(skylark, langx) {
+    var every = Array.prototype.every,
+        forEach = Array.prototype.forEach,
+        camelCase = langx.camelCase,
+        dasherize = langx.dasherize;
+
+    function maybeAddPx(name, value) {
+        return (typeof value == "number" && !cssNumber[dasherize(name)]) ? value + "px" : value
+    }
+
+    var cssNumber = {
+            'column-count': 1,
+            'columns': 1,
+            'font-weight': 1,
+            'line-height': 1,
+            'opacity': 1,
+            'z-index': 1,
+            'zoom': 1
+        },
+        classReCache = {
+
+        };
+
+    function classRE(name) {
+        return name in classReCache ?
+            classReCache[name] : (classReCache[name] = new RegExp('(^|\\s)' + name + '(\\s|$)'));
+    }
+
+    // access className property while respecting SVGAnimatedString
+    /*
+     * Adds the specified class(es) to each element in the set of matched elements.
+     * @param {HTMLElement} node
+     * @param {String} value
+     */
+    function className(node, value) {
+        var klass = node.className || '',
+            svg = klass && klass.baseVal !== undefined
+
+        if (value === undefined) return svg ? klass.baseVal : klass
+        svg ? (klass.baseVal = value) : (node.className = value)
+    }
+
+    function disabled(elm, value ) {
+        if (arguments.length < 2) {
+            return !!this.dom.disabled;
+        }
+
+        elm.disabled = value;
+
+        return this;
+    }
+
+    var elementDisplay = {};
+
+    function defaultDisplay(nodeName) {
+        var element, display
+        if (!elementDisplay[nodeName]) {
+            element = document.createElement(nodeName)
+            document.body.appendChild(element)
+            display = getComputedStyle(element, '').getPropertyValue("display")
+            element.parentNode.removeChild(element)
+            display == "none" && (display = "block")
+            elementDisplay[nodeName] = display
+        }
+        return elementDisplay[nodeName]
+    }
+    /*
+     * Display the matched elements.
+     * @param {HTMLElement} elm
+     */
+    function show(elm) {
+        styler.css(elm, "display", "");
+        if (styler.css(elm, "display") == "none") {
+            styler.css(elm, "display", defaultDisplay(elm.nodeName));
+        }
+        return this;
+    }
+
+    function isInvisible(elm) {
+        return styler.css(elm, "display") == "none" || styler.css(elm, "opacity") == 0;
+    }
+
+    /*
+     * Hide the matched elements.
+     * @param {HTMLElement} elm
+     */
+    function hide(elm) {
+        styler.css(elm, "display", "none");
+        return this;
+    }
+
+    /*
+     * Adds the specified class(es) to each element in the set of matched elements.
+     * @param {HTMLElement} elm
+     * @param {String} name
+     */
+    function addClass(elm, name) {
+        if (!name) return this
+        var cls = className(elm),
+            names;
+        if (langx.isString(name)) {
+            names = name.split(/\s+/g);
+        } else {
+            names = name;
+        }
+        names.forEach(function(klass) {
+            var re = classRE(klass);
+            if (!cls.match(re)) {
+                cls += (cls ? " " : "") + klass;
+            }
+        });
+
+        className(elm, cls);
+
+        return this;
+    }
+    /*
+     * Get the value of a computed style property for the first element in the set of matched elements or set one or more CSS properties for every matched element.
+     * @param {HTMLElement} elm
+     * @param {String} property
+     * @param {Any} value
+     */
+    function css(elm, property, value) {
+        if (arguments.length < 3) {
+            var computedStyle,
+                computedStyle = getComputedStyle(elm, '')
+            if (langx.isString(property)) {
+                return elm.style[camelCase(property)] || computedStyle.getPropertyValue(dasherize(property))
+            } else if (langx.isArrayLike(property)) {
+                var props = {}
+                forEach.call(property, function(prop) {
+                    props[prop] = (elm.style[camelCase(prop)] || computedStyle.getPropertyValue(dasherize(prop)))
+                })
+                return props
+            }
+        }
+
+        var css = '';
+        if (typeof(property) == 'string') {
+            if (!value && value !== 0) {
+                elm.style.removeProperty(dasherize(property));
+            } else {
+                css = dasherize(property) + ":" + maybeAddPx(property, value)
+            }
+        } else {
+            for (key in property) {
+                if (property[key] === undefined) {
+                    continue;
+                }
+                if (!property[key] && property[key] !== 0) {
+                    elm.style.removeProperty(dasherize(key));
+                } else {
+                    css += dasherize(key) + ':' + maybeAddPx(key, property[key]) + ';'
+                }
+            }
+        }
+
+        elm.style.cssText += ';' + css;
+        return this;
+    }
+
+    /*
+     * Determine whether any of the matched elements are assigned the given class.
+     * @param {HTMLElement} elm
+     * @param {String} name
+     */
+    function hasClass(elm, name) {
+        var re = classRE(name);
+        return elm.className && elm.className.match(re);
+    }
+
+    /*
+     * Remove a single class, multiple classes, or all classes from each element in the set of matched elements.
+     * @param {HTMLElement} elm
+     * @param {String} name
+     */
+    function removeClass(elm, name) {
+        if (name) {
+            var cls = className(elm),
+                names;
+
+            if (langx.isString(name)) {
+                names = name.split(/\s+/g);
+            } else {
+                names = name;
+            }
+
+            names.forEach(function(klass) {
+                var re = classRE(klass);
+                if (cls.match(re)) {
+                    cls = cls.replace(re, " ");
+                }
+            });
+
+            className(elm, cls.trim());
+        } else {
+            className(elm, "");
+        }
+
+        return this;
+    }
+
+    /*
+     * Add or remove one or more classes from the specified element.
+     * @param {HTMLElement} elm
+     * @param {String} name
+     * @param {} when
+     */
+    function toggleClass(elm, name, when) {
+        var self = this;
+        name.split(/\s+/g).forEach(function(klass) {
+            if (when === undefined) {
+                when = !self.hasClass(elm, klass);
+            }
+            if (when) {
+                self.addClass(elm, klass);
+            } else {
+                self.removeClass(elm, klass)
+            }
+        });
+
+        return self;
+    }
+
+    var styler = function() {
+        return styler;
+    };
+
+    langx.mixin(styler, {
+        autocssfix: false,
+        cssHooks: {
+
+        },
+
+        addClass: addClass,
+        className: className,
+        css: css,
+        disabled : disabled,        
+        hasClass: hasClass,
+        hide: hide,
+        isInvisible: isInvisible,
+        removeClass: removeClass,
+        show: show,
+        toggleClass: toggleClass
+    });
+
+    return skylark.styler = styler;
 });
 define('skylark-utils/dnd',[
     "./skylark",
@@ -5469,7 +5772,7 @@ define('skylark-utils/filer',[
 
     return skylark.filer = filer;
 });
-define('skylark-utils/fx',[
+define('skylark-utils-dom/fx',[
     "./skylark",
     "./langx",
     "./browser",
@@ -5999,7 +6302,13 @@ define('skylark-utils/fx',[
 
     return skylark.fx = fx;
 });
-define('skylark-utils/transforms',[
+define('skylark-utils/fx',[
+    "skylark-utils-dom/fx"
+], function(fx) {
+    return fx;
+});
+
+define('skylark-utils-dom/transforms',[
     "./skylark",
     "./langx",
     "./browser",
@@ -6130,7 +6439,7 @@ define('skylark-utils/transforms',[
   return skylark.transforms = transforms;
 });
 
-define('skylark-utils/query',[
+define('skylark-utils-dom/query',[
     "./skylark",
     "./langx",
     "./noder",
@@ -7024,7 +7333,7 @@ define('skylark-utils/query',[
     return skylark.query = query;
 
 });
-define('skylark-utils/images',[
+define('skylark-utils-dom/images',[
     "./skylark",
     "./langx",
     "./eventer",
@@ -7297,6 +7606,12 @@ define('skylark-utils/images',[
   });
 
   return skylark.images = images;
+});
+
+define('skylark-utils/images',[
+    "skylark-utils-dom/images"
+], function(images) {
+    return images;
 });
 
 define('skylark-utils/models',[
@@ -7973,7 +8288,13 @@ define('skylark-utils/models',[
     return skylark.models = models;
 });
 
-define('skylark-utils/scripter',[
+define('skylark-utils/query',[
+    "skylark-utils-dom/query"
+], function(query) {
+    return query;
+});
+
+define('skylark-utils-dom/scripter',[
     "./skylark",
     "./langx",
     "./noder",
@@ -8069,6 +8390,12 @@ define('skylark-utils/scripter',[
 
     return skylark.scripter = scripter;
 });
+define('skylark-utils/scripter',[
+    "skylark-utils-dom/scripter"
+], function(scripter) {
+    return scripter;
+});
+
 define('skylark-utils/_storages/cookies',[
     "../langx"
 ], function(langx) {
@@ -8971,19 +9298,23 @@ define('skylark-utils/touchx',[], function() {
     return DragDropTouch;
 });
 
-define('skylark-utils/velm',[
+define('skylark-utils/transforms',[
+    "skylark-utils-dom/transforms"
+], function(transforms) {
+    return transforms;
+});
+
+define('skylark-utils-dom/velm',[
     "./skylark",
     "./langx",
     "./datax",
-    "./dnd",
     "./eventer",
-    "./filer",
     "./finder",
     "./fx",
     "./geom",
     "./noder",
     "./styler"
-], function(skylark, langx, datax, dnd, eventer, filer, finder, fx, geom, noder, styler) {
+], function(skylark, langx, datax, eventer, finder, fx, geom, noder, styler) {
     var map = Array.prototype.map,
         slice = Array.prototype.slice;
     /*
@@ -9102,12 +9433,6 @@ define('skylark-utils/velm',[
         "trigger"
     ], eventer);
 
-    // from ./filer
-    velm.delegate([
-        "picker",
-        "dropzone"
-    ], filer);
-
     // from ./finder
     velm.delegate([
         "ancestor",
@@ -9176,13 +9501,6 @@ define('skylark-utils/velm',[
         "size",
         "width"
     ], geom);
-
-    // from ./mover
-    velm.delegate([
-        "draggable",
-        "droppable"
-    ], dnd);
-
 
     // from ./noder
     velm.delegate([
@@ -9259,6 +9577,12 @@ define('skylark-utils/velm',[
 
     return skylark.velm = velm;
 });
+define('skylark-utils/velm',[
+    "skylark-utils-dom/velm"
+], function(velm) {
+    return velm;
+});
+
 define('skylark-utils/widgets',[
     "./skylark",
     "./langx",
