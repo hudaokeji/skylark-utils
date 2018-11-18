@@ -56,7 +56,7 @@
                 args.push(require(dep));
             })
 
-            module.exports = module.factory.apply(window, args);
+            module.exports = module.factory.apply(globals, args);
         }
         return module.exports;
     };
@@ -72,7 +72,7 @@
     var skylarkjs = require("skylark-langx/skylark");
 
     if (isCmd) {
-      exports = skylarkjs;
+      module.exports = skylarkjs;
     } else {
       globals.skylarkjs  = skylarkjs;
     }
@@ -2482,10 +2482,10 @@ define('skylark-utils/transforms',[
     return transforms;
 });
 
-define('skylark-utils/velm',[
-    "skylark-utils-dom/velm"
-], function(velm) {
-    return velm;
+define('skylark-utils/elmx',[
+    "skylark-utils-dom/elmx"
+], function(elmx) {
+    return elmx;
 });
 
 define('skylark-utils/widgets',[
@@ -2497,8 +2497,8 @@ define('skylark-utils/widgets',[
     "./geom",
     "./eventer",
     "./query",
-    "./velm"
-], function(skylark,langx,noder, datax, styler, geom, eventer,query,velm) {
+    "./elmx"
+], function(skylark,langx,noder, datax, styler, geom, eventer,query,elmx) {
 	function widgets() {
 	    return widgets;
 	}
@@ -2704,7 +2704,7 @@ define('skylark-utils/main',[
     "./touchx",
     "./transforms",
     "./langx",
-    "./velm",
+    "./elmx",
     "./widgets"
 ], function(skylark) {
     return skylark;

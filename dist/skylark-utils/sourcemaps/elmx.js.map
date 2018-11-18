@@ -1,0 +1,1 @@
+{"version":3,"sources":["elmx.js"],"names":["define","elmx"],"mappings":";;;;;;;AAAAA,QACI,0BACD,SAASC,GACR,MAAOA","file":"../elmx.js","sourcesContent":["define([\r\n    \"skylark-utils-dom/elmx\"\r\n], function(elmx) {\r\n    return elmx;\r\n});\r\n"]}

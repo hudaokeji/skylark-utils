@@ -20,7 +20,7 @@ define([
     "./touchx",
     "./transforms",
     "./langx",
-    "./velm",
+    "./elmx",
     "./widgets"
 ], function(skylark) {
     return skylark;

@@ -5,5 +5,5 @@
  * @link www.skylarkjs.org
  * @license MIT
  */
-define(["skylark-utils-dom/velm"],function(e){return e});
-//# sourceMappingURL=sourcemaps/velm.js.map
+define(["skylark-utils-dom/elmx"],function(e){return e});
+//# sourceMappingURL=sourcemaps/elmx.js.map

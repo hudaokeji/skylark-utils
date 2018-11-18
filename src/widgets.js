@@ -7,8 +7,8 @@ define([
     "./geom",
     "./eventer",
     "./query",
-    "./velm"
-], function(skylark,langx,noder, datax, styler, geom, eventer,query,velm) {
+    "./elmx"
+], function(skylark,langx,noder, datax, styler, geom, eventer,query,elmx) {
 	function widgets() {
 	    return widgets;
 	}
