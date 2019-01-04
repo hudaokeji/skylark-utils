@@ -1,1 +1,1 @@
-{"version":3,"sources":["filer.js"],"names":["define","filer"],"mappings":";;;;;;;AAAAA,QACI,6BACD,SAASC,GACR,MAAOA","file":"../filer.js","sourcesContent":["define([\r\n    \"skylark-utils-filer/filer\"\r\n], function(filer) {\r\n    return filer;\r\n});"]}
+{"version":3,"sources":["filer.js"],"names":["define","filer"],"mappings":";;;;;;;AAAAA,QACI,6BACD,SAASC,GACR,OAAOA","file":"../filer.js","sourcesContent":["define([\r\n    \"skylark-utils-filer/filer\"\r\n], function(filer) {\r\n    return filer;\r\n});"]}

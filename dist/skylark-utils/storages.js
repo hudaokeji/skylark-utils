@@ -5,5 +5,5 @@
  * @link www.skylarkjs.org
  * @license MIT
  */
-define(["./skylark","./langx","./_storages/cookies","./_storages/localfs","./_storages/localStorage","./_storages/sessionStorage"],function(o,s,e,a,r,t){function n(){return n}return s.mixin(n,{cookies:e,localfs:a,localStorage:r,sessionStorage:t}),o.storages=n});
+define(["skylark-utils-storage"],function(e){return e});
 //# sourceMappingURL=sourcemaps/storages.js.map

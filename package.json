@@ -25,7 +25,8 @@
   "dependencies": {
     "skylark-langx": "git+https://github.com/skylarklangx/skylark-langx.git#master",
     "skylark-utils-dom": "git+https://github.com/skylarkutils/skylark-utils-dom.git#master",
-    "skylark-utils-filer": "git+https://github.com/skylarkutils/skylark-utils-filer.git#master"
+    "skylark-utils-filer": "git+https://github.com/skylarkutils/skylark-utils-filer.git#master",
+    "skylark-utils-storage": "git+https://github.com/skylarkutils/skylark-utils-storage.git#master"
   },
   "engines": {
     "node": ">=0.8.0"

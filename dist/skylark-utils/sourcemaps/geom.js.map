@@ -1,1 +1,1 @@
-{"version":3,"sources":["geom.js"],"names":["define","geom"],"mappings":";;;;;;;AAAAA,QACI,0BACD,SAASC,GACR,MAAOA","file":"../geom.js","sourcesContent":["define([\r\n    \"skylark-utils-dom/geom\"\r\n], function(geom) {\r\n    return geom;\r\n});\r\n"]}
+{"version":3,"sources":["geom.js"],"names":["define","geom"],"mappings":";;;;;;;AAAAA,QACI,0BACD,SAASC,GACR,OAAOA","file":"../geom.js","sourcesContent":["define([\r\n    \"skylark-utils-dom/geom\"\r\n], function(geom) {\r\n    return geom;\r\n});\r\n"]}

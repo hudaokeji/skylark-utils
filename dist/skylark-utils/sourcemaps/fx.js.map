@@ -1,1 +1,1 @@
-{"version":3,"sources":["fx.js"],"names":["define","fx"],"mappings":";;;;;;;AAAAA,QACI,wBACD,SAASC,GACR,MAAOA","file":"../fx.js","sourcesContent":["define([\r\n    \"skylark-utils-dom/fx\"\r\n], function(fx) {\r\n    return fx;\r\n});\r\n"]}
+{"version":3,"sources":["fx.js"],"names":["define","fx"],"mappings":";;;;;;;AAAAA,QACI,wBACD,SAASC,GACR,OAAOA","file":"../fx.js","sourcesContent":["define([\r\n    \"skylark-utils-dom/fx\"\r\n], function(fx) {\r\n    return fx;\r\n});\r\n"]}

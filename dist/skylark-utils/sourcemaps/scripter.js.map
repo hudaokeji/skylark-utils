@@ -1,1 +1,1 @@
-{"version":3,"sources":["scripter.js"],"names":["define","scripter"],"mappings":";;;;;;;AAAAA,QACI,8BACD,SAASC,GACR,MAAOA","file":"../scripter.js","sourcesContent":["define([\r\n    \"skylark-utils-dom/scripter\"\r\n], function(scripter) {\r\n    return scripter;\r\n});\r\n"]}
+{"version":3,"sources":["scripter.js"],"names":["define","scripter"],"mappings":";;;;;;;AAAAA,QACI,8BACD,SAASC,GACR,OAAOA","file":"../scripter.js","sourcesContent":["define([\r\n    \"skylark-utils-dom/scripter\"\r\n], function(scripter) {\r\n    return scripter;\r\n});\r\n"]}

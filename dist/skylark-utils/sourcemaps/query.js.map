@@ -1,1 +1,1 @@
-{"version":3,"sources":["query.js"],"names":["define","query"],"mappings":";;;;;;;AAAAA,QACI,2BACD,SAASC,GACR,MAAOA","file":"../query.js","sourcesContent":["define([\r\n    \"skylark-utils-dom/query\"\r\n], function(query) {\r\n    return query;\r\n});\r\n"]}
+{"version":3,"sources":["query.js"],"names":["define","query"],"mappings":";;;;;;;AAAAA,QACI,2BACD,SAASC,GACR,OAAOA","file":"../query.js","sourcesContent":["define([\r\n    \"skylark-utils-dom/query\"\r\n], function(query) {\r\n    return query;\r\n});\r\n"]}
